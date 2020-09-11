@@ -19,6 +19,7 @@
     "block.ProcessSyncedBlockEventServerSideImplementation",
     "gui.FabricApiExtendedScreenImplementation",
     "gui.GuiHandlerIdImplementation",
+    "gui.InventoryStackInjectImplementation",
     "item.CreativeModeHotfix",
     "item.CustomRecipeFix",
     "item.InventoryDesyncPatch",

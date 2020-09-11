@@ -17,8 +17,12 @@
  */
 package io.github.theepicblock.polymc.api.gui;
 
+import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.util.collection.DefaultedList;
 
 public interface GuiPoly {
     ScreenHandlerType<?> getClientSideType();
+
+    DefaultedList<ItemStack> getClientSideStackList(DefaultedList<ItemStack> input);
 }

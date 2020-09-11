@@ -17,12 +17,19 @@
  */
 package io.github.theepicblock.polymc.api.gui;
 
+import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.util.collection.DefaultedList;
 
 public class TestGuiPoly implements GuiPoly {
 
     @Override
     public ScreenHandlerType<?> getClientSideType() {
         return ScreenHandlerType.FURNACE;
+    }
+
+    @Override
+    public DefaultedList<ItemStack> getClientSideStackList(DefaultedList<ItemStack> input) {
+        return input;
     }
 }
