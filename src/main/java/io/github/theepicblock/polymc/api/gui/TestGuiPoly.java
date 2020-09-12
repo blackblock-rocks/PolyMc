@@ -25,11 +25,19 @@ public class TestGuiPoly implements GuiPoly {
 
     @Override
     public ScreenHandlerType<?> getClientSideType() {
-        return ScreenHandlerType.FURNACE;
+        return ScreenHandlerType.GENERIC_9X3;
     }
 
     @Override
     public DefaultedList<ItemStack> getClientSideStackList(DefaultedList<ItemStack> input) {
-        return input;
+        int a = input.size()-36;
+        DefaultedList<ItemStack> b = DefaultedList.ofSize(36+27,ItemStack.EMPTY);
+        for (int i = 0; i < a; i++) {
+            b.set(i,input.get(i));
+        }
+        for (int i = 27; i < 36+27; i++) {
+            b.set(i,input.get(a+i-27));
+        }
+        return b;
     }
 }

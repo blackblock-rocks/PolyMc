@@ -30,9 +30,13 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(ServerPlayerEntity.class)
 public class InventoryStackInjectImplementation {
     @ModifyVariable(method = "onHandlerRegistered(Lnet/minecraft/screen/ScreenHandler;Lnet/minecraft/util/collection/DefaultedList;)V", at = @At("HEAD"))
-    public DefaultedList<ItemStack> handlerRegisterModifyStack(ScreenHandler handler, DefaultedList<ItemStack> input) {
-        GuiPoly poly = PolyMc.getMap().getGuiPoly(handler.getType());
-        if (poly == null) return input;
-        return poly.getClientSideStackList(input);
+    public DefaultedList<ItemStack> handlerRegisterModifyStack(DefaultedList<ItemStack> input, ScreenHandler handler) {
+        try {
+            GuiPoly poly = PolyMc.getMap().getGuiPoly(handler.getType());
+            if (poly == null) return input;
+            return poly.getClientSideStackList(input);
+        } catch (UnsupportedOperationException ignored) {
+            return input;
+        }
     }
 }
