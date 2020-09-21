@@ -17,6 +17,8 @@
     "block.BlockPolyImplementation",
     "block.PaletteBlockPolyImplementation",
     "block.ProcessSyncedBlockEventServerSideImplementation",
+    "gui.ClickWindowPacketAccessor",
+    "gui.ClickWindowsUnMapInject",
     "gui.FabricApiExtendedScreenImplementation",
     "gui.GuiHandlerIdImplementation",
     "gui.InventoryStackInjectImplementation",

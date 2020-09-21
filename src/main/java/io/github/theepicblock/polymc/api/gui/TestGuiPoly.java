@@ -45,6 +45,13 @@ public class TestGuiPoly implements GuiPoly {
     @Override
     public int remapSlot(int input) {
         if (input < amountOfSlots) return input;
-        return input-amountOfSlots+36;
+        return input-amountOfSlots+27;
+    }
+
+    @Override
+    public int unmapSlot(int input) {
+        if (input < amountOfSlots) return input;
+        if (input < 27) return 1; //Might have weird consequences
+        return input-27+amountOfSlots;
     }
 }
