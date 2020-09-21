@@ -66,4 +66,8 @@ public class PolyMap {
     public ImmutableMap<Block,BlockPoly> getBlockPolys() {
         return blockPolys;
     }
+
+    public ImmutableMap<ScreenHandlerType<?>,GuiPoly> getGuiPolys() {
+        return guiPolys;
+    }
 }

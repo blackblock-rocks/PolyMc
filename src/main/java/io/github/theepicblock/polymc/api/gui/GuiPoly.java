@@ -17,11 +17,12 @@
  */
 package io.github.theepicblock.polymc.api.gui;
 
+import io.github.theepicblock.polymc.api.DebugInfoProvider;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.collection.DefaultedList;
 
-public interface GuiPoly {
+public interface GuiPoly extends DebugInfoProvider<ScreenHandlerType<?>> {
     ScreenHandlerType<?> getClientSideType();
 
     DefaultedList<ItemStack> getClientSideStackList(DefaultedList<ItemStack> input);

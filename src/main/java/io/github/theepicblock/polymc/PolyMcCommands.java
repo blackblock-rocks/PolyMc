@@ -27,6 +27,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.LiteralText;
+import net.minecraft.util.registry.Registry;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -69,6 +70,10 @@ public class PolyMcCommands {
                                 map.getBlockPolys().forEach((block, poly) -> {
                                     addAndFormatToBuilder(out, block, block.getTranslationKey(), poly);
                                 });
+                                out.append("##########\n###GUIS###\n##########\n");
+                                map.getGuiPolys().forEach((gui, poly) -> {
+                                    addAndFormatToBuilder(out, gui, Registry.SCREEN_HANDLER.getId(gui), poly);
+                                });
 
                                 File polyDump = new File(FabricLoader.getInstance().getGameDirectory(), "PolyDump.txt");
                                 try {
@@ -88,7 +93,8 @@ public class PolyMcCommands {
         });
     }
 
-    private static <T> void addAndFormatToBuilder(StringBuilder b, T object, String key, DebugInfoProvider<T> poly) {
+    private static <T> void addAndFormatToBuilder(StringBuilder b, T object, Object key, DebugInfoProvider<T> poly) {
+        if (key == null) key = "invalid_key";
         b.append(Util.expandTo(key, 45));
         b.append(" --> ");
         b.append(Util.expandTo(poly.getClass().getName(), 60));

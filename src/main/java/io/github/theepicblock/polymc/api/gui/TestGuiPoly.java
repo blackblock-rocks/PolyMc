@@ -33,11 +33,8 @@ public class TestGuiPoly implements GuiPoly {
     public DefaultedList<ItemStack> getClientSideStackList(DefaultedList<ItemStack> input) {
         amountOfSlots = input.size()-36;
         DefaultedList<ItemStack> b = DefaultedList.ofSize(36+27,ItemStack.EMPTY);
-        for (int i = 0; i < amountOfSlots; i++) {
-            b.set(i,input.get(i));
-        }
-        for (int i = 27; i < 36+27; i++) {
-            b.set(i,input.get(amountOfSlots+i-27));
+        for (int i = 0; i < input.size(); i++) {
+            b.set(remapSlot(i),input.get(i));
         }
         return b;
     }
@@ -51,7 +48,32 @@ public class TestGuiPoly implements GuiPoly {
     @Override
     public int unmapSlot(int input) {
         if (input < amountOfSlots) return input;
-        if (input < 27) return 1; //Might have weird consequences
+        if (input < 27) return -999; //Might have weird consequences
         return input-27+amountOfSlots;
+    }
+
+    @Override
+    public String getDebugInfo(ScreenHandlerType<?> obj) {
+        StringBuilder out = new StringBuilder();
+        out.append(amountOfSlots).append(" slots. (Might be invalid if the gui has never been opened)");
+        for (int i = 0; i < amountOfSlots+36; i++) {
+            out.append("\n");
+            out.append("    #");
+            out.append(i);
+            out.append(" -> ");
+            out.append(remapSlot(i));
+            out.append("(-> ");
+            out.append(unmapSlot(remapSlot(i)));
+            out.append(")");
+        }
+        out.append("\n    # unmapped");
+        for (int i = 0; i < 36+27; i++) {
+            out.append("\n");
+            out.append("    #");
+            out.append(i);
+            out.append(" -> ");
+            out.append(unmapSlot(i));
+        }
+        return out.toString();
     }
 }

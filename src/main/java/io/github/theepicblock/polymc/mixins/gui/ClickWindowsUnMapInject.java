@@ -35,7 +35,7 @@ public class ClickWindowsUnMapInject {
     /**
      * @reason we need to unmap the slot id so it points to the correct value again.
      */
-    @Inject(method = "onClickWindow", at = @At("HEAD"))
+    @Inject(method = "onClickWindow(Lnet/minecraft/network/packet/c2s/play/ClickWindowC2SPacket;)V", at = @At("HEAD"))
     public void onClickWindowInject(ClickWindowC2SPacket packet, CallbackInfo ci) {
         try {
             GuiPoly poly = PolyMc.getMap().getGuiPoly(this.player.currentScreenHandler.getType());
