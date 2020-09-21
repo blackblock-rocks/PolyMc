@@ -22,6 +22,7 @@ import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.collection.DefaultedList;
 
 public class TestGuiPoly implements GuiPoly {
+    private int amountOfSlots;
 
     @Override
     public ScreenHandlerType<?> getClientSideType() {
@@ -30,14 +31,20 @@ public class TestGuiPoly implements GuiPoly {
 
     @Override
     public DefaultedList<ItemStack> getClientSideStackList(DefaultedList<ItemStack> input) {
-        int a = input.size()-36;
+        amountOfSlots = input.size()-36;
         DefaultedList<ItemStack> b = DefaultedList.ofSize(36+27,ItemStack.EMPTY);
-        for (int i = 0; i < a; i++) {
+        for (int i = 0; i < amountOfSlots; i++) {
             b.set(i,input.get(i));
         }
         for (int i = 27; i < 36+27; i++) {
-            b.set(i,input.get(a+i-27));
+            b.set(i,input.get(amountOfSlots+i-27));
         }
         return b;
+    }
+
+    @Override
+    public int remapSlot(int input) {
+        if (input < amountOfSlots) return input;
+        return input-amountOfSlots+36;
     }
 }

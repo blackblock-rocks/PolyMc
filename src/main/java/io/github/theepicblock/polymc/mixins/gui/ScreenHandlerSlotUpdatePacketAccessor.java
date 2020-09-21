@@ -15,16 +15,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; If not, see <https://www.gnu.org/licenses>.
  */
-package io.github.theepicblock.polymc.api.gui;
+package io.github.theepicblock.polymc.mixins.gui;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.network.packet.s2c.play.ScreenHandlerSlotUpdateS2CPacket;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-public interface GuiPoly {
-    ScreenHandlerType<?> getClientSideType();
+@Mixin(ScreenHandlerSlotUpdateS2CPacket.class)
+public interface ScreenHandlerSlotUpdatePacketAccessor {
+    @Accessor()
+    void setSlot(int v);
 
-    DefaultedList<ItemStack> getClientSideStackList(DefaultedList<ItemStack> input);
-
-    int remapSlot(int input);
+    @Accessor
+    int getSlot();
 }

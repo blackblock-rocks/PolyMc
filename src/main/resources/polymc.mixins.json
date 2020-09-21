@@ -20,6 +20,8 @@
     "gui.FabricApiExtendedScreenImplementation",
     "gui.GuiHandlerIdImplementation",
     "gui.InventoryStackInjectImplementation",
+    "gui.ScreenHandlerSlotUpdatePacketAccessor",
+    "gui.SlotUpdateSendInject",
     "item.CreativeModeHotfix",
     "item.CustomRecipeFix",
     "item.InventoryDesyncPatch",
