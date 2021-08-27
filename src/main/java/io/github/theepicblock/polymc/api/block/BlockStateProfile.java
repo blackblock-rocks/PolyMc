@@ -25,6 +25,9 @@ import io.github.theepicblock.polymc.impl.poly.block.SimpleReplacementPoly;
 import net.minecraft.block.*;
 import net.minecraft.state.property.Properties;
 
+import net.minecraft.util.math.Direction;
+import net.minecraft.state.property.BooleanProperty;
+
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
@@ -78,6 +81,199 @@ public class BlockStateProfile {
     };
     private static final Predicate<BlockState> POWERED_FILTER = (blockState) -> blockState.get(Properties.POWERED) == true;
 
+    /**
+     * There are 9 Brown Mushroom states that generate in vanilla survival,
+     * leave those 9 states alone (+ the all-sides block)
+     * (Some other states are obtainable by shearing with other mushroom blocks,
+     *  but that will be disabled)
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static final Predicate<BlockState> BROWN_MUSHROOM_FILTER = (blockState) -> {
+
+        boolean down = _hasDirection(blockState, Direction.DOWN);
+        boolean east = _hasDirection(blockState, Direction.EAST);
+        boolean north = _hasDirection(blockState, Direction.NORTH);
+        boolean south = _hasDirection(blockState, Direction.SOUTH);
+        boolean up = _hasDirection(blockState, Direction.UP);
+        boolean west = _hasDirection(blockState, Direction.WEST);
+
+        if (!down) {
+
+            if (!east && !north && !south && !west) {
+                // Up & no up are in use
+                return false;
+            }
+
+            if (up) {
+                if (west && !east && !north && !south) {
+                    return false;
+                }
+
+                if (south && !east && !north && !west) {
+                    return false;
+                }
+
+                if (south && west && !east && !north) {
+                    return false;
+                }
+
+                if (north && !east && !south && !west) {
+                    return false;
+                }
+
+                if (north && west && !east && !south) {
+                    return false;
+                }
+
+                if (east && !north && !south && !west) {
+                    return false;
+                }
+
+                if (east && south && !north && !west) {
+                    return false;
+                }
+
+                if (east && north && !south && !west) {
+                    return false;
+                }
+            }
+        } else if (east && north && south && up && west) {
+            return false;
+        }
+
+        return true;
+    };
+
+    /**
+     * There are 17 Red Mushroom states that generate in vanilla survival,
+     * leave those states alone (+ the all-sides block)
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static final Predicate<BlockState> RED_MUSHROOM_FILTER = (blockState) -> {
+
+        boolean down = _hasDirection(blockState, Direction.DOWN);
+        boolean east = _hasDirection(blockState, Direction.EAST);
+        boolean north = _hasDirection(blockState, Direction.NORTH);
+        boolean south = _hasDirection(blockState, Direction.SOUTH);
+        boolean up = _hasDirection(blockState, Direction.UP);
+        boolean west = _hasDirection(blockState, Direction.WEST);
+
+        if (!down) {
+
+            if (west && !east && !north && !south) {
+                return up;
+            }
+
+            if (!east && !north && !up && !west) {
+                return south;
+            }
+
+            if (up && !east && !north && !south && !west) {
+                return false;
+            }
+
+            if (south && west && !east && !north && !up) {
+                return false;
+            }
+
+            if (!east && !north && !south && !west) {
+                return false;
+            }
+
+            if (south && up && west && !east && !north) {
+                return false;
+            }
+
+            if (north && !east && !south && !up) {
+                return false;
+            }
+
+            if (north && up && !east && !south) {
+                return false;
+            }
+
+            if (east && !north && !south && !up && !west) {
+                return false;
+            }
+
+            if (east && up && !north && !south && !west) {
+                return false;
+            }
+
+            if (east && south && !north && !up && !west) {
+                return false;
+            }
+
+            if (east && south && up && !north && !west) {
+                return false;
+            }
+
+            if (east && north && !south && !up && !west) {
+                return false;
+            }
+
+            if (east && north && up && !south && !west) {
+                return false;
+            }
+        } else if (east && north && south && up && west) {
+            return false;
+        }
+
+        return true;
+    };
+
+    /**
+     * There are 2 Mushroom Stem states that generate in vanilla survival,
+     * leave those states alone + the all-sides block and the ones that can be sheared
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static final Predicate<BlockState> STEM_MUSHROOM_FILTER = (blockState) -> {
+
+        boolean down = _hasDirection(blockState, Direction.DOWN);
+        boolean up = _hasDirection(blockState, Direction.UP);
+
+        // Ignore stems
+        if (!down && !up) {
+            return false;
+        }
+
+        boolean east = _hasDirection(blockState, Direction.EAST);
+        boolean north = _hasDirection(blockState, Direction.NORTH);
+        boolean south = _hasDirection(blockState, Direction.SOUTH);
+        boolean west = _hasDirection(blockState, Direction.WEST);
+
+        // Don't use the all-sides block
+        if (down && east && north && south && up && west) {
+            return false;
+        }
+
+        return true;
+    };
+
+    /**
+     * Helper method to check if the given Direction is enabled on the given BlockState
+     * (Used for mushroom blocks)
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static boolean _hasDirection(BlockState state, Direction direction) {
+        BooleanProperty booleanProperty = _getProperty(direction);
+        return state.contains(booleanProperty) && (Boolean)state.get(booleanProperty);
+    }
+
+    /**
+     * Helper method to get a certain Direction BooleanProperty
+     * (Used for mushroom blocks)
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static BooleanProperty _getProperty(Direction direction) {
+        return (BooleanProperty)ConnectingBlock.FACING_PROPERTIES.get(direction);
+    }
+
     //ON FIRST REGISTERS
     private static final BiConsumer<Block,PolyRegistry> DEFAULT_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new SimpleReplacementPoly(block.getDefaultState()));
     private static final BiConsumer<Block,PolyRegistry> NO_COLLISION_ON_FIRST_REGISTER = (block, polyRegistry) -> {
@@ -96,9 +292,16 @@ public class BlockStateProfile {
     private static final BiConsumer<Block,PolyRegistry> PETRIFIED_OAK_SLAB_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new PropertyRetainingReplacementPoly(Blocks.OAK_SLAB));
     private static final BiConsumer<Block,PolyRegistry> FARMLAND_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.FARMLAND.getDefaultState(), FARMLAND_FILTER));
     private static final BiConsumer<Block,PolyRegistry> POWERED_BLOCK_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, (BlockPolyPredicate)(block2) -> block2.with(Properties.POWERED, false));
+    private static final BiConsumer<Block,PolyRegistry> BROWN_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.BROWN_MUSHROOM_BLOCK.getDefaultState(), BROWN_MUSHROOM_FILTER));
+    private static final BiConsumer<Block,PolyRegistry> RED_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.RED_MUSHROOM_BLOCK.getDefaultState(), RED_MUSHROOM_FILTER));
+    private static final BiConsumer<Block,PolyRegistry> STEM_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.MUSHROOM_STEM.getDefaultState(), STEM_MUSHROOM_FILTER));
 
     //PROFILES
+    public static final BlockStateProfile BROWN_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("brown mushroom block", Blocks.BROWN_MUSHROOM_BLOCK, BROWN_MUSHROOM_FILTER, BROWN_MUSHROOM_ON_FIRST_REGISTER);
+    public static final BlockStateProfile RED_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("red mushroom block", Blocks.RED_MUSHROOM_BLOCK, RED_MUSHROOM_FILTER, RED_MUSHROOM_ON_FIRST_REGISTER);
+    public static final BlockStateProfile STEM_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("stem mushroom block", Blocks.MUSHROOM_STEM, STEM_MUSHROOM_FILTER, STEM_MUSHROOM_ON_FIRST_REGISTER);
     public static final BlockStateProfile NOTE_BLOCK_PROFILE = getProfileWithDefaultFilter("note block", Blocks.NOTE_BLOCK);
+
     public static final BlockStateProfile LEAVES_PROFILE = getProfileWithDefaultFilter("leaves", LEAVES_BLOCKS);
     public static final BlockStateProfile NO_COLLISION_PROFILE = new BlockStateProfile("blocks without collisions", NO_COLLISION_BLOCKS, NO_COLLISION_FILTER, NO_COLLISION_ON_FIRST_REGISTER);
     public static final BlockStateProfile PETRIFIED_OAK_SLAB_PROFILE = new BlockStateProfile("petrified oak slab", Blocks.PETRIFIED_OAK_SLAB, ALWAYS_TRUE_FILTER, PETRIFIED_OAK_SLAB_ON_FIRST_REGISTER);

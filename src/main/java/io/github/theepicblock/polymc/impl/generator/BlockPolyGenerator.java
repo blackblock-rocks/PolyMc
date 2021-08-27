@@ -130,6 +130,19 @@ public class BlockPolyGenerator {
 
         //=== FULL BLOCKS ===
         if (Block.isShapeFullCube(collisionShape)) {
+
+            try {
+                return new UnusedBlockStatePoly(block, builder, BlockStateProfile.BROWN_MUSHROOM_BLOCK_PROFILE);
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
+            try {
+                return new UnusedBlockStatePoly(block, builder, BlockStateProfile.RED_MUSHROOM_BLOCK_PROFILE);
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
+            try {
+                return new UnusedBlockStatePoly(block, builder, BlockStateProfile.STEM_MUSHROOM_BLOCK_PROFILE);
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
             try {
                 return new UnusedBlockStatePoly(block, builder, BlockStateProfile.NOTE_BLOCK_PROFILE);
             } catch (BlockStateManager.StateLimitReachedException ignored) {}

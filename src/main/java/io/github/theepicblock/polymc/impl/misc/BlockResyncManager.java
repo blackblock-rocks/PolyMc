@@ -37,6 +37,11 @@ import java.util.List;
 public class BlockResyncManager {
     public static boolean shouldForceSync(BlockState sourceState, BlockState clientState, Direction direction) {
         Block block = clientState.getBlock();
+
+        if (block == Blocks.BROWN_MUSHROOM_BLOCK || block == Blocks.RED_MUSHROOM_BLOCK || block == Blocks.MUSHROOM_STEM) {
+            return true;
+        }
+
         if (block == Blocks.NOTE_BLOCK) {
             return direction == Direction.UP;
         } else if (block == Blocks.TRIPWIRE) {
@@ -52,6 +57,7 @@ public class BlockResyncManager {
 
     public static void onBlockUpdate(BlockState sourceState, BlockPos pos, World world, ServerPlayerEntity player, List<BlockPos> exceptions) {
         BlockPos.Mutable mPos = new BlockPos.Mutable();
+
         for (Direction d : Direction.values()) {
             mPos.set(pos.getX() + d.getOffsetX(), pos.getY() + d.getOffsetY(), pos.getZ() + d.getOffsetZ());
             if (exceptions != null && exceptions.contains(mPos)) continue;
