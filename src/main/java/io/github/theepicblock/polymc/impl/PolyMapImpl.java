@@ -25,7 +25,6 @@ import io.github.theepicblock.polymc.api.item.ItemPoly;
 import io.github.theepicblock.polymc.api.item.ItemTransformer;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -79,14 +78,6 @@ public class PolyMapImpl implements PolyMap {
         }
 
         return ret;
-    }
-
-    @Override
-    public BlockState getClientBlock(BlockState serverBlock) {
-        BlockPoly poly = blockPolys.get(serverBlock.getBlock());
-        if (poly == null) return serverBlock;
-
-        return poly.getClientBlock(serverBlock);
     }
 
     @Override

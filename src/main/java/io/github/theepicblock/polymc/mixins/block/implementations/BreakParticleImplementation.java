@@ -17,10 +17,8 @@
  */
 package io.github.theepicblock.polymc.mixins.block.implementations;
 
-import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.mixin.CustomBlockBreakingCheck;
 import io.github.theepicblock.polymc.impl.mixin.PacketReplacementUtil;
-import io.github.theepicblock.polymc.mixins.block.FallbackBaseImplementation;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
@@ -32,11 +30,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
- * In the {@link Block#onBreak(World, BlockPos, BlockState, PlayerEntity)} method, there is a call to create a WorldEvent for the breakage.
- * Normally the remapping of that would be caught by {@link FallbackBaseImplementation} but that method doesn't respect individuals their PolyMaps.
+ * Redirects the {@link BlockState} in Block#spawnBreakParticles to send the particles for the polyd {@link BlockState} instead.
  */
 @Mixin(Block.class)
-public class WorldEventImplementation {
+public class BreakParticleImplementation {
     /**
      * Replaces the call to {@link World#syncWorldEvent(PlayerEntity, int, BlockPos, int)} with a call to {@link PacketReplacementUtil#syncWorldEvent(World, PlayerEntity, int, BlockPos, BlockState)}
      * to respect different PolyMaps
@@ -48,7 +45,7 @@ public class WorldEventImplementation {
 
         // Minecraft assumes the player who breaks the block knows it's breaking a block.
         // However, as PolyMc reimplements block breaking server-side, the one breaking the block needs to be notified too
-        var exception = CustomBlockBreakingCheck.needsCustomBreaking(spe, stateParent.getBlock()) ? null : player;
-        PacketReplacementUtil.syncWorldEvent(world, exception, 2001, pos, stateParent);
+        var needsCustomBreaking = CustomBlockBreakingCheck.needsCustomBreaking(spe, stateParent.getBlock());
+        PacketReplacementUtil.syncWorldEvent(world, needsCustomBreaking ? null : player, 2001, pos, stateParent);
     }
 }
