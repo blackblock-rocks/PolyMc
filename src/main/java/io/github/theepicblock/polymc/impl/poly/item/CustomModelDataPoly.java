@@ -19,9 +19,11 @@ package io.github.theepicblock.polymc.impl.poly.item;
 
 import io.github.theepicblock.polymc.api.item.CustomModelDataManager;
 import io.github.theepicblock.polymc.api.item.ItemPoly;
+import io.github.theepicblock.polymc.api.item.ItemStackPoly;
 import io.github.theepicblock.polymc.api.resource.JsonModel;
 import io.github.theepicblock.polymc.api.resource.ResourcePackMaker;
 import io.github.theepicblock.polymc.impl.Util;
+import net.minecraft.client.item.TooltipData;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
@@ -31,12 +33,13 @@ import net.minecraft.util.Pair;
 import net.minecraft.util.registry.Registry;
 
 import java.util.HashMap;
+import java.util.Optional;
 
 /**
  * The most standard ItemPoly implementation
  */
 public class CustomModelDataPoly implements ItemPoly {
-    protected final ItemStack defaultServerItem;
+    protected final ItemStackPoly defaultServerItem;
     protected final int CMDvalue;
 
     public CustomModelDataPoly(CustomModelDataManager registerManager, Item base) {
@@ -62,7 +65,9 @@ public class CustomModelDataPoly implements ItemPoly {
     public CustomModelDataPoly(CustomModelDataManager registerManager, Item base, Item[] targets) {
         Pair<Item,Integer> pair = registerManager.requestCMD(targets);
         CMDvalue = pair.getRight();
-        defaultServerItem = new ItemStack(pair.getLeft());
+
+        defaultServerItem = new ItemStackPoly(pair.getLeft());
+
         NbtCompound tag = new NbtCompound();
         tag.putInt("CustomModelData", CMDvalue);
         defaultServerItem.setTag(tag);
@@ -72,7 +77,7 @@ public class CustomModelDataPoly implements ItemPoly {
     @SuppressWarnings("ConstantConditions")
     @Override
     public ItemStack getClientItem(ItemStack input) {
-        ItemStack serverItem = defaultServerItem;
+        ItemStackPoly serverItem = defaultServerItem;
         if (input.hasTag()) {
             serverItem = defaultServerItem.copy();
             serverItem.setTag(input.getTag().copy());
@@ -91,6 +96,9 @@ public class CustomModelDataPoly implements ItemPoly {
 
             serverItem.setCustomName(name);
         }
+
+        serverItem.setPolyMcOriginalItemStack(input);
+        serverItem.saySomething();
 
         serverItem.setCount(input.getCount());
         serverItem.setCooldown(input.getCooldown());

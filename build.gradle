@@ -26,6 +26,10 @@ dependencies {
 	modCompileOnly "com.github.CaffeineMC.lithium-fabric:lithium:${project.lithium_version}"
 }
 
+loom {
+	accessWidener = file("src/main/resources/polymc.accesswidener")
+}
+
 processResources {
 	inputs.property "version", project.version
 
