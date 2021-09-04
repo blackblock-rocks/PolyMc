@@ -22,15 +22,22 @@ import io.github.theepicblock.polymc.api.item.ItemPoly;
 import io.github.theepicblock.polymc.api.resource.JsonModel;
 import io.github.theepicblock.polymc.api.resource.ResourcePackMaker;
 import io.github.theepicblock.polymc.impl.Util;
+import net.minecraft.client.item.TooltipContext;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.text.*;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.registry.Registry;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * The most standard ItemPoly implementation
@@ -89,6 +96,33 @@ public class CustomModelDataPoly implements ItemPoly {
             name.setStyle(name.getStyle().withItalic(false).withColor(input.getRarity().formatting));
 
             serverItem.setCustomName(name);
+        }
+
+        Entity holder = input.getHolder();
+        PlayerEntity player = holder instanceof PlayerEntity ? (PlayerEntity) holder : null;
+
+        // Get the item tooltips as if we're on the client side
+        List<Text> tooltips = input.getTooltip(player, TooltipContext.Default.NORMAL);
+
+        // The item name is always added as a tooltip, so make sure there is more than 1 line
+        if (tooltips.size() > 1) {
+
+            NbtList list = new NbtList();
+
+            // Remove the first line, it's just the name
+            tooltips.remove(0);
+
+            for (Text entry : tooltips) {
+                BaseText line = (BaseText) entry;
+
+                // Lore is normally shown in italics, so disable italics.
+                // And the default tooltip color should be gray, so set that too, otherwise it'll be purple
+                line.setStyle(line.getStyle().withItalic(false).withColor(Formatting.GRAY));
+                list.add(NbtString.of(Text.Serializer.toJson(line)));
+            }
+
+            NbtCompound display = serverItem.getOrCreateSubTag("display");
+            display.put("Lore", list);
         }
 
         serverItem.setCount(input.getCount());
