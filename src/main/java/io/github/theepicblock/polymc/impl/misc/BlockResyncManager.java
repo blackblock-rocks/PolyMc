@@ -20,7 +20,11 @@ package io.github.theepicblock.polymc.impl.misc;
 import io.github.theepicblock.polymc.api.block.BlockPoly;
 import io.github.theepicblock.polymc.api.misc.PolyMapProvider;
 import net.minecraft.block.*;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.decoration.ItemFrameEntity;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
+import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -62,6 +66,18 @@ public class BlockResyncManager {
                 if (BlockResyncManager.shouldForceSync(sourceState, clientState, d)) {
                     BlockPos nPos = mPos.toImmutable();
                     player.networkHandler.sendPacket(new BlockUpdateS2CPacket(nPos, state));
+
+                    ItemFrameEntity frame = new ItemFrameEntity(world, nPos, Direction.UP);
+                    NbtCompound testNbt = new NbtCompound();
+                    testNbt.putBoolean("Invisible", false);
+                    testNbt.putBoolean("Fixed", true);
+                    testNbt.putByte("Facing", (byte) Direction.UP.getId());
+                    frame.readCustomDataFromNbt(testNbt);
+
+                    EntitySpawnS2CPacket testpack = new EntitySpawnS2CPacket(frame);
+                    player.networkHandler.sendPacket(testpack);
+
+
                     List<BlockPos> newExceptions;
                     if (exceptions == null) {
                         newExceptions = new ArrayList<>();
