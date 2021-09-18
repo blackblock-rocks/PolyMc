@@ -131,6 +131,16 @@ public class BlockPolyGenerator {
         //=== FULL BLOCKS ===
         if (Block.isShapeFullCube(collisionShape)) {
 
+            if (!state.isOpaque()) {
+
+                // Chorus plants are actually not a full cube. Each state has a different collision box
+                // Not a huge deal in theory, but in practice the server will complain and people walking on
+                // or against the block will have jitter
+                try {
+                    return new UnusedBlockStatePoly(block, builder, BlockStateProfile.CHORUS_PLANT_BLOCK_PROFILE);
+                } catch (BlockStateManager.StateLimitReachedException ignored) {}
+            }
+
             try {
                 return new UnusedBlockStatePoly(block, builder, BlockStateProfile.BROWN_MUSHROOM_BLOCK_PROFILE);
             } catch (BlockStateManager.StateLimitReachedException ignored) {}

@@ -82,6 +82,45 @@ public class BlockStateProfile {
     private static final Predicate<BlockState> POWERED_FILTER = (blockState) -> blockState.get(Properties.POWERED) == true;
 
     /**
+     * Some chorus plant states can be used as non-opaque blocks
+     * (Though there are collision box issues)
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static final Predicate<BlockState> CHORUS_PLANT_FILTER = (blockState) -> {
+
+        boolean down = _hasDirection(blockState, Direction.DOWN);
+        boolean up = _hasDirection(blockState, Direction.UP);
+        boolean east = _hasDirection(blockState, Direction.EAST);
+        boolean north = _hasDirection(blockState, Direction.NORTH);
+        boolean south = _hasDirection(blockState, Direction.SOUTH);
+        boolean west = _hasDirection(blockState, Direction.WEST);
+
+        int east_int = east ? 1 : 0;
+        int north_int = north ? 1 : 0;
+        int south_int = south ? 1 : 0;
+        int west_int = west ? 1 : 0;
+
+        int sides = east_int + north_int + south_int + west_int;
+
+        if (!up && !down) {
+            if (sides == 0) {
+                return true;
+            }
+
+            return sides > 2;
+        }
+
+        // A middle-piece can not have any sides
+        if (up && down && sides > 0) {
+            return true;
+        }
+
+        // A branch piece can only have 1 side
+        return up && sides > 1;
+    };
+
+    /**
      * There are 9 Brown Mushroom states that generate in vanilla survival,
      * leave those 9 states alone (+ the all-sides block)
      * (Some other states are obtainable by shearing with other mushroom blocks,
@@ -295,12 +334,15 @@ public class BlockStateProfile {
     private static final BiConsumer<Block,PolyRegistry> BROWN_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.BROWN_MUSHROOM_BLOCK.getDefaultState(), BROWN_MUSHROOM_FILTER));
     private static final BiConsumer<Block,PolyRegistry> RED_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.RED_MUSHROOM_BLOCK.getDefaultState(), RED_MUSHROOM_FILTER));
     private static final BiConsumer<Block,PolyRegistry> STEM_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.MUSHROOM_STEM.getDefaultState(), STEM_MUSHROOM_FILTER));
+    private static final BiConsumer<Block,PolyRegistry> CHORUS_PLANT_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.CHORUS_PLANT.getDefaultState(), CHORUS_PLANT_FILTER));
 
     //PROFILES
     public static final BlockStateProfile BROWN_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("brown mushroom block", Blocks.BROWN_MUSHROOM_BLOCK, BROWN_MUSHROOM_FILTER, BROWN_MUSHROOM_ON_FIRST_REGISTER);
     public static final BlockStateProfile RED_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("red mushroom block", Blocks.RED_MUSHROOM_BLOCK, RED_MUSHROOM_FILTER, RED_MUSHROOM_ON_FIRST_REGISTER);
     public static final BlockStateProfile STEM_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("stem mushroom block", Blocks.MUSHROOM_STEM, STEM_MUSHROOM_FILTER, STEM_MUSHROOM_ON_FIRST_REGISTER);
     public static final BlockStateProfile NOTE_BLOCK_PROFILE = getProfileWithDefaultFilter("note block", Blocks.NOTE_BLOCK);
+    public static final BlockStateProfile CHORUS_PLANT_BLOCK_PROFILE = new BlockStateProfile("chorus plant block", Blocks.CHORUS_PLANT, CHORUS_PLANT_FILTER, CHORUS_PLANT_ON_FIRST_REGISTER);
+
 
     public static final BlockStateProfile LEAVES_PROFILE = getProfileWithDefaultFilter("leaves", LEAVES_BLOCKS);
     public static final BlockStateProfile NO_COLLISION_PROFILE = new BlockStateProfile("blocks without collisions", NO_COLLISION_BLOCKS, NO_COLLISION_FILTER, NO_COLLISION_ON_FIRST_REGISTER);
