@@ -133,6 +133,12 @@ public class BlockPolyGenerator {
 
             if (!state.isOpaque()) {
 
+                // Chorus flowers are full cubes & are not opaque.
+                // There are only 4 available states to reuse though
+                try {
+                    return new UnusedBlockStatePoly(block, builder, BlockStateProfile.CHORUS_FLOWER_BLOCK_PROFILE);
+                } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
                 // Chorus plants are actually not a full cube. Each state has a different collision box
                 // Not a huge deal in theory, but in practice the server will complain and people walking on
                 // or against the block will have jitter

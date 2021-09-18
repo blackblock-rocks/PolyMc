@@ -82,6 +82,18 @@ public class BlockStateProfile {
     private static final Predicate<BlockState> POWERED_FILTER = (blockState) -> blockState.get(Properties.POWERED) == true;
 
     /**
+     * Chorus flowers are full blocks, and have 4 states that can be used
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static final Predicate<BlockState> CHORUS_FLOWER_FILTER = (blockState) -> {
+
+        int age = blockState.get(Properties.AGE_5);
+
+        return age > 0 && age < 5;
+    };
+
+    /**
      * Some chorus plant states can be used as non-opaque blocks
      * (Though there are collision box issues)
      *
@@ -335,6 +347,7 @@ public class BlockStateProfile {
     private static final BiConsumer<Block,PolyRegistry> RED_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.RED_MUSHROOM_BLOCK.getDefaultState(), RED_MUSHROOM_FILTER));
     private static final BiConsumer<Block,PolyRegistry> STEM_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.MUSHROOM_STEM.getDefaultState(), STEM_MUSHROOM_FILTER));
     private static final BiConsumer<Block,PolyRegistry> CHORUS_PLANT_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.CHORUS_PLANT.getDefaultState(), CHORUS_PLANT_FILTER));
+    private static final BiConsumer<Block,PolyRegistry> CHORUS_FLOWER_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.CHORUS_FLOWER.getDefaultState(), CHORUS_FLOWER_FILTER));
 
     //PROFILES
     public static final BlockStateProfile BROWN_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("brown mushroom block", Blocks.BROWN_MUSHROOM_BLOCK, BROWN_MUSHROOM_FILTER, BROWN_MUSHROOM_ON_FIRST_REGISTER);
@@ -342,7 +355,7 @@ public class BlockStateProfile {
     public static final BlockStateProfile STEM_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("stem mushroom block", Blocks.MUSHROOM_STEM, STEM_MUSHROOM_FILTER, STEM_MUSHROOM_ON_FIRST_REGISTER);
     public static final BlockStateProfile NOTE_BLOCK_PROFILE = getProfileWithDefaultFilter("note block", Blocks.NOTE_BLOCK);
     public static final BlockStateProfile CHORUS_PLANT_BLOCK_PROFILE = new BlockStateProfile("chorus plant block", Blocks.CHORUS_PLANT, CHORUS_PLANT_FILTER, CHORUS_PLANT_ON_FIRST_REGISTER);
-
+    public static final BlockStateProfile CHORUS_FLOWER_BLOCK_PROFILE = new BlockStateProfile("chorus flower block", Blocks.CHORUS_FLOWER, CHORUS_FLOWER_FILTER, CHORUS_FLOWER_ON_FIRST_REGISTER);
 
     public static final BlockStateProfile LEAVES_PROFILE = getProfileWithDefaultFilter("leaves", LEAVES_BLOCKS);
     public static final BlockStateProfile NO_COLLISION_PROFILE = new BlockStateProfile("blocks without collisions", NO_COLLISION_BLOCKS, NO_COLLISION_FILTER, NO_COLLISION_ON_FIRST_REGISTER);
