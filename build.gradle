@@ -1,6 +1,7 @@
 plugins {
-	id 'fabric-loom' version '0.8-SNAPSHOT'
+	id 'fabric-loom' version '0.10-SNAPSHOT'
 	id 'maven-publish'
+	id "io.github.juuxel.loom-quiltflower-mini" version "1.0.0"
 }
 
 sourceCompatibility = JavaVersion.VERSION_16
@@ -28,8 +29,8 @@ dependencies {
 
 sourceSets {
 	testmod {
-		runtimeClasspath += main.runtimeClasspath
-		compileClasspath += main.compileClasspath
+		runtimeClasspath += main.runtimeClasspath + main.output
+		compileClasspath += main.compileClasspath + main.output
 	}
 }
 
@@ -48,6 +49,8 @@ loom {
 			source sourceSets.testmod
 		}
 	}
+
+	accessWidenerPath = file("src/main/resources/polymc.accesswidener")
 }
 
 processResources {
@@ -83,13 +86,7 @@ jar {
 publishing {
 	publications {
 		mavenJava(MavenPublication) {
-			// add all the jars that should be included when publishing to maven
-			artifact(remapJar) {
-				builtBy remapJar
-			}
-			artifact(sourcesJar) {
-				builtBy remapSourcesJar
-			}
+			from components.java
 		}
 	}
 
