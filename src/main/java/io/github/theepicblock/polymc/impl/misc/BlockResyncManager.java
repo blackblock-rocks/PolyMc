@@ -18,6 +18,7 @@
 package io.github.theepicblock.polymc.impl.misc;
 
 import io.github.theepicblock.polymc.api.block.BlockPoly;
+import io.github.theepicblock.polymc.api.block.BlockStateProfile;
 import io.github.theepicblock.polymc.api.misc.PolyMapProvider;
 import net.minecraft.block.*;
 import net.minecraft.block.enums.DoubleBlockHalf;
@@ -28,6 +29,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -36,11 +38,42 @@ import java.util.List;
  * These methods are called by {@link io.github.theepicblock.polymc.mixins.block.ResyncImplementation} to resync the blocks with the server's state.
  */
 public class BlockResyncManager {
-    public static boolean shouldForceSync(BlockState sourceState, BlockState clientState, Direction direction) {
+    public static boolean shouldForceSync(World world, ServerPlayerEntity player, BlockPos oppositePos, BlockPos sourcePos, BlockState sourceState, BlockState clientState, Direction direction) {
         Block block = clientState.getBlock();
 
+        // Mushroom blocks only trigger updates when a non-sheared face touches another mushroom block of the same type
         if (block == Blocks.BROWN_MUSHROOM_BLOCK || block == Blocks.RED_MUSHROOM_BLOCK || block == Blocks.MUSHROOM_STEM) {
-            return true;
+
+            // See if the client-side blockstate has a non-sheared face on the opposite side of the updated block
+            Boolean hasNonShearedFace = BlockStateProfile.hasBooleanDirection(clientState, direction.getOpposite());
+
+            if (hasNonShearedFace) {
+
+                // Now get the server-side blockstate of the opposite side
+                BlockState oppositeState = world.getBlockState(oppositePos);
+
+                // Try to get the player's BlockPoly for this opposite side
+                BlockPoly poly = PolyMapProvider.getPolyMap(player).getBlockPoly(oppositeState.getBlock());
+
+                BlockState oppositeClientState = null;
+
+                if (poly == null) {
+                    // There is no poly map, so the server-side state should be the same as the client-side's one
+                    oppositeClientState = oppositeState;
+                } else {
+                    // There is a polymap, so the client-side state differs from the server-side one
+                    oppositeClientState = poly.getClientBlock(oppositeState);
+                }
+
+                // Get the opposite block as used on the client-side
+                Block oppositeClientBlock = oppositeClientState.getBlock();
+
+                // If the 2 touching blocks on the client side are NOT the same,
+                // no update will occur, and we can safely skip it.
+                return block == oppositeClientBlock;
+            }
+
+            return false;
         }
 
         if (block == Blocks.NOTE_BLOCK) {
@@ -57,10 +90,25 @@ public class BlockResyncManager {
     }
 
     public static void onBlockUpdate(BlockState sourceState, BlockPos sourcePos, World world, ServerPlayerEntity player, List<BlockPos> checkedBlocks) {
+        if (checkedBlocks == null) checkedBlocks = new ArrayList<>();
+        _onBlockUpdate(sourceState, sourcePos, world, player, checkedBlocks,0);
+    }
+
+    private static void _onBlockUpdate(BlockState sourceState, BlockPos sourcePos, World world, ServerPlayerEntity player, List<BlockPos> checkedBlocks, int level) {
+
+        // Huge volumes of poly-blocks could cause a stack overflow,
+        // so set a limit on how many times this method can recurse
+        if (level > 1000) {
+            return;
+        }
+
         BlockPos.Mutable pos = new BlockPos.Mutable();
         for (Direction direction : Direction.values()) {
             pos.set(sourcePos.getX() + direction.getOffsetX(), sourcePos.getY() + direction.getOffsetY(), sourcePos.getZ() + direction.getOffsetZ());
-            if (checkedBlocks != null && checkedBlocks.contains(pos)) continue;
+
+            if (checkedBlocks.contains(pos)) {
+                continue;
+            }
 
             BlockState state = world.getBlockState(pos);
 
@@ -69,23 +117,20 @@ public class BlockResyncManager {
             if (poly != null) {
                 BlockState clientState = poly.getClientBlock(state);
 
-                if (BlockResyncManager.shouldForceSync(sourceState, clientState, direction)) {
+                if (BlockResyncManager.shouldForceSync(world, player, sourcePos, pos, sourceState, clientState, direction)) {
                     BlockPos newPos = pos.toImmutable();
                     player.networkHandler.sendPacket(new BlockUpdateS2CPacket(newPos, state));
-
-                    if (checkedBlocks == null) checkedBlocks = new ArrayList<>();
                     checkedBlocks.add(sourcePos);
 
-                    onBlockUpdate(clientState, newPos, world, player, checkedBlocks);
+                    _onBlockUpdate(clientState, newPos, world, player, checkedBlocks, level + 1);
                 }
             }
 
             // If the lower half of a door is interacted with, we should check the upper half as well
             boolean isUpperDoor = direction == Direction.UP && state.getBlock() instanceof DoorBlock && state.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER;
             if (isUpperDoor) {
-                if (checkedBlocks == null) checkedBlocks = new ArrayList<>();
                 checkedBlocks.add(sourcePos);
-                onBlockUpdate(null, pos, world, player, checkedBlocks);
+                _onBlockUpdate(null, pos, world, player, checkedBlocks, level + 1);
             }
         }
     }

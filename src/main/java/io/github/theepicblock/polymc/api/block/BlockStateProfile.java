@@ -101,12 +101,12 @@ public class BlockStateProfile {
      */
     private static final Predicate<BlockState> CHORUS_PLANT_FILTER = (blockState) -> {
 
-        boolean down = _hasDirection(blockState, Direction.DOWN);
-        boolean up = _hasDirection(blockState, Direction.UP);
-        boolean east = _hasDirection(blockState, Direction.EAST);
-        boolean north = _hasDirection(blockState, Direction.NORTH);
-        boolean south = _hasDirection(blockState, Direction.SOUTH);
-        boolean west = _hasDirection(blockState, Direction.WEST);
+        boolean down = hasBooleanDirection(blockState, Direction.DOWN);
+        boolean up = hasBooleanDirection(blockState, Direction.UP);
+        boolean east = hasBooleanDirection(blockState, Direction.EAST);
+        boolean north = hasBooleanDirection(blockState, Direction.NORTH);
+        boolean south = hasBooleanDirection(blockState, Direction.SOUTH);
+        boolean west = hasBooleanDirection(blockState, Direction.WEST);
 
         int east_int = east ? 1 : 0;
         int north_int = north ? 1 : 0;
@@ -142,12 +142,12 @@ public class BlockStateProfile {
      */
     private static final Predicate<BlockState> BROWN_MUSHROOM_FILTER = (blockState) -> {
 
-        boolean down = _hasDirection(blockState, Direction.DOWN);
-        boolean east = _hasDirection(blockState, Direction.EAST);
-        boolean north = _hasDirection(blockState, Direction.NORTH);
-        boolean south = _hasDirection(blockState, Direction.SOUTH);
-        boolean up = _hasDirection(blockState, Direction.UP);
-        boolean west = _hasDirection(blockState, Direction.WEST);
+        boolean down = hasBooleanDirection(blockState, Direction.DOWN);
+        boolean east = hasBooleanDirection(blockState, Direction.EAST);
+        boolean north = hasBooleanDirection(blockState, Direction.NORTH);
+        boolean south = hasBooleanDirection(blockState, Direction.SOUTH);
+        boolean up = hasBooleanDirection(blockState, Direction.UP);
+        boolean west = hasBooleanDirection(blockState, Direction.WEST);
 
         if (!down) {
 
@@ -204,12 +204,12 @@ public class BlockStateProfile {
      */
     private static final Predicate<BlockState> RED_MUSHROOM_FILTER = (blockState) -> {
 
-        boolean down = _hasDirection(blockState, Direction.DOWN);
-        boolean east = _hasDirection(blockState, Direction.EAST);
-        boolean north = _hasDirection(blockState, Direction.NORTH);
-        boolean south = _hasDirection(blockState, Direction.SOUTH);
-        boolean up = _hasDirection(blockState, Direction.UP);
-        boolean west = _hasDirection(blockState, Direction.WEST);
+        boolean down = hasBooleanDirection(blockState, Direction.DOWN);
+        boolean east = hasBooleanDirection(blockState, Direction.EAST);
+        boolean north = hasBooleanDirection(blockState, Direction.NORTH);
+        boolean south = hasBooleanDirection(blockState, Direction.SOUTH);
+        boolean up = hasBooleanDirection(blockState, Direction.UP);
+        boolean west = hasBooleanDirection(blockState, Direction.WEST);
 
         if (!down) {
 
@@ -283,18 +283,18 @@ public class BlockStateProfile {
      */
     private static final Predicate<BlockState> STEM_MUSHROOM_FILTER = (blockState) -> {
 
-        boolean down = _hasDirection(blockState, Direction.DOWN);
-        boolean up = _hasDirection(blockState, Direction.UP);
+        boolean down = hasBooleanDirection(blockState, Direction.DOWN);
+        boolean up = hasBooleanDirection(blockState, Direction.UP);
 
         // Ignore stems
         if (!down && !up) {
             return false;
         }
 
-        boolean east = _hasDirection(blockState, Direction.EAST);
-        boolean north = _hasDirection(blockState, Direction.NORTH);
-        boolean south = _hasDirection(blockState, Direction.SOUTH);
-        boolean west = _hasDirection(blockState, Direction.WEST);
+        boolean east = hasBooleanDirection(blockState, Direction.EAST);
+        boolean north = hasBooleanDirection(blockState, Direction.NORTH);
+        boolean south = hasBooleanDirection(blockState, Direction.SOUTH);
+        boolean west = hasBooleanDirection(blockState, Direction.WEST);
 
         // Don't use the all-sides block
         if (down && east && north && south && up && west) {
@@ -310,7 +310,7 @@ public class BlockStateProfile {
      *
      * @author   Jelle De Loecker   <jelle@elevenways.be>
      */
-    private static boolean _hasDirection(BlockState state, Direction direction) {
+    public static boolean hasBooleanDirection(BlockState state, Direction direction) {
         BooleanProperty booleanProperty = _getProperty(direction);
         return state.contains(booleanProperty) && (Boolean)state.get(booleanProperty);
     }
