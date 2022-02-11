@@ -24,6 +24,7 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static io.github.theepicblock.polymc.impl.resource.ResourcePackGenerator.getPolymcPath;
@@ -161,7 +162,7 @@ public class ArmorMaterialPoly {
                 BufferedImage bi = null;
 
                 for (int i = 0; i <= 1; i++) {
-                    var path = "assets/" + modelPath.getNamespace() + "/textures/models/armor/" + modelPath.getPath() + "_layer_" + (i + 1) + ".png";
+                    var path = "textures/models/armor/" + modelPath.getPath() + "_layer_" + (i + 1) + ".png";
                     byte[] data = resources.getInputStream(modelPath.getNamespace(), path).readAllBytes();
 
                     if (data != null) {
@@ -192,10 +193,17 @@ public class ArmorMaterialPoly {
         for (int i = 0; i <= 1; i++) {
             BufferedImage tex;
 
-            tex = ImageIO.read(clientJar.getInputStream(clientJar.getEntry(leatherLayerPath(i + 1))));
+            String leatherLayerSourcePath = sourceLeatherLayerPath(i + 1);
+            String leatherLayerOverlaySourcePath = sourceLeatherLayerOverlayPath(i + 1);
+
+            ZipEntry leatherLayer = clientJar.getEntry(leatherLayerSourcePath);
+            ZipEntry leatherLayerOverlay = clientJar.getEntry(leatherLayerOverlaySourcePath);
+
+            tex = ImageIO.read(clientJar.getInputStream(leatherLayer));
             graphics[i].drawImage(tex, 0, 0, null);
 
-            tex = ImageIO.read(clientJar.getInputStream(clientJar.getEntry(leatherLayerOverlayPath(i + 1))));
+            tex = ImageIO.read(clientJar.getInputStream(leatherLayerOverlay));
+
             graphics[i].drawImage(tex, 0, 0, null);
 
             graphics[i].setColor(Color.WHITE);
@@ -226,14 +234,12 @@ public class ArmorMaterialPoly {
                 inputStream = new ByteArrayInputStream(outputStream.toByteArray());
                 TextureAsset leatherLayerAsset = new TextureAsset(inputStream, null);
                 pack.setAsset("minecraft", leatherLayerPath(i + 1), leatherLayerAsset);
-                //pack.writeToPath(leatherLayerPath(i + 1), outputStream.toByteArray());
 
                 outputStream = new ByteArrayOutputStream();
                 ImageIO.write(new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB), "png", outputStream);
                 inputStream = new ByteArrayInputStream(outputStream.toByteArray());
                 TextureAsset leatherLayerOverlayAsset = new TextureAsset(inputStream, null);
                 pack.setAsset("minecraft", leatherLayerOverlayPath(i + 1), leatherLayerOverlayAsset);
-                //pack.writeToPath(leatherLayerOverlayPath(i + 1), out.toByteArray());
 
             }
         } catch (Exception e) {
@@ -248,11 +254,6 @@ public class ArmorMaterialPoly {
                 InputStream inputStream = new ByteArrayInputStream(Files.readAllBytes(getPolymcPath("base-armor/rendertype_armor_cutout_no_cull." + string)));
                 TextureAsset fancyPantsShaderAsset = new TextureAsset(inputStream, null);
                 pack.setAsset("minecraft", "shaders/core/rendertype_armor_cutout_no_cull." + string, fancyPantsShaderAsset);
-
-                /*pack.writeToPath(
-                        "assets/minecraft/shaders/core/rendertype_armor_cutout_no_cull." + string,
-                        Files.readAllBytes(getPolymcPath("base-armor/rendertype_armor_cutout_no_cull." + string))
-                );*/
             }
         } catch (Exception e) {
             logger.warn("Error occurred when writing armor shader!");
@@ -265,7 +266,15 @@ public class ArmorMaterialPoly {
      * @param level
      */
     private static String leatherLayerPath(int level) {
-        return "assets/minecraft/textures/models/armor/leather_layer_" + level + ".png";
+        return "textures/models/armor/leather_layer_" + level + ".png";
+    }
+
+    /**
+     * Construct a path to the source leather layer of the given level
+     * @param level
+     */
+    private static String sourceLeatherLayerPath(int level) {
+        return "assets/minecraft/" + leatherLayerPath(level);
     }
 
     /**
@@ -273,7 +282,15 @@ public class ArmorMaterialPoly {
      * @param level
      */
     private static String leatherLayerOverlayPath(int level) {
-        return "assets/minecraft/textures/models/armor/leather_layer_" + level + "_overlay.png";
+        return "textures/models/armor/leather_layer_" + level + "_overlay.png";
+    }
+
+    /**
+     * Construct a path to the source overlay leather layer of the given level
+     * @param level
+     */
+    private static String sourceLeatherLayerOverlayPath(int level) {
+        return "assets/minecraft/" + leatherLayerOverlayPath(level);
     }
 
     /**
