@@ -10,6 +10,7 @@ public final class SharedValuesKey<T> {
     private final SharedValueFactory<T> factory;
     private final @Nullable ResourceContainerFactory<T> resourceContainerFactory;
 
+    @ApiStatus.Experimental
     public SharedValuesKey(SharedValueFactory<T> factory, @Nullable ResourceContainerFactory<T> resourceContainerFactory) {
         this.factory = factory;
         this.resourceContainerFactory = resourceContainerFactory;
@@ -17,7 +18,6 @@ public final class SharedValuesKey<T> {
 
     @ApiStatus.Internal
     public T createNew(PolyRegistry registry) {
-        if (this.hasResources()) registry = null; // Prevents there being a reference to PolyRegistry after it has been built
         return factory.create(registry);
     }
 

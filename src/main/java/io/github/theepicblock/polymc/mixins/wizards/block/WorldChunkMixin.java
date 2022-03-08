@@ -1,5 +1,6 @@
 package io.github.theepicblock.polymc.mixins.wizards.block;
 
+import io.github.theepicblock.polymc.PolyMc;
 import io.github.theepicblock.polymc.api.PolyMap;
 import io.github.theepicblock.polymc.api.block.BlockPoly;
 import io.github.theepicblock.polymc.api.misc.PolyMapProvider;
@@ -8,16 +9,15 @@ import io.github.theepicblock.polymc.api.wizard.WizardView;
 import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.misc.PolyMapMap;
 import io.github.theepicblock.polymc.impl.misc.WatchListener;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import io.github.theepicblock.polymc.impl.mixin.WizardTickerDuck;
+import io.github.theepicblock.polymc.impl.poly.wizard.PlacedWizardInfo;
 import net.minecraft.block.BlockState;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.collection.Int2ObjectBiMap;
+import net.minecraft.util.collection.PackedIntegerArray;
 import net.minecraft.util.collection.PaletteStorage;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.HeightLimitView;
 import net.minecraft.world.World;
@@ -53,12 +53,13 @@ public abstract class WorldChunkMixin extends Chunk implements WatchListener, Wi
 
     @Shadow public abstract World getWorld();
 
-
     @Unique
     private Map<BlockPos,Wizard> createWizardsForChunk(PolyMap map) {
         Map<BlockPos,Wizard> ret = new HashMap<>();
         if (!(this.world instanceof ServerWorld))
             return ret; //Wizards are only passed ServerWorlds, so we can't create any wizards here.
+        if (!map.hasBlockWizards())
+            return ret;
 
         for (ChunkSection section : this.sectionArray) {
             if (section == null) continue;
@@ -67,111 +68,141 @@ public abstract class WorldChunkMixin extends Chunk implements WatchListener, Wi
             var data = ((PalettedContainerAccessor<BlockState>)container).getData();
             var palette = data.palette();
             var paletteData = data.storage();
-            if (palette instanceof ArrayPalette) {
-                ret.putAll(createWizardsArrayPalette(map, (ArrayPalette<BlockState>)palette, paletteData, section.getYOffset()));
-            } else if (palette instanceof BiMapPalette) {
-                ret.putAll(createWizardsBiMapPalette(map, (BiMapPalette<BlockState>)palette, paletteData, section.getYOffset()));
+            processWizards(map, palette, paletteData, section.getYOffset(), ret);
+        }
+
+        return ret;
+    }
+
+    @Unique
+    private void processWizards(PolyMap polyMap, Palette<BlockState> palette, PaletteStorage data, int yOffset, Map<BlockPos,Wizard> wizardMap) {
+        if (data.getSize() == 0) return;
+
+        if (palette.getSize() < 64) {
+            // The palette contains all block states present in the chunk
+            var idsWithPolys = new BlockPoly[palette.getSize()];
+            for (int i = 0; i < palette.getSize(); i++) {
+                var state = palette.get(i);
+                var poly = polyMap.getBlockPoly(state.getBlock());
+                if (poly != null && poly.hasWizard()) {
+                    idsWithPolys[i] = poly;
+                }
+            }
+
+            if (data instanceof PackedIntegerArray) {
+                // Fast way of iterating the packed data with an index
+                int i = 0;
+
+                var elementBits = data.getElementBits();
+                var elementsPerLong = (char)(64 / elementBits);
+                var maxValue = (1L << elementBits) - 1L;
+                var size = data.getSize();
+
+                data:
+                for (long l : data.getData()) {
+                    for (int j = 0; j < elementsPerLong; ++j) {
+                        var blockIndex = (int)(l & maxValue);
+                        var poly = idsWithPolys[blockIndex];
+                        processBlock(poly, i, yOffset, wizardMap);
+
+                        l >>= elementBits;
+                        ++i;
+                        if (i >= size) {
+                            break data;
+                        }
+                    }
+                }
             } else {
-                ret.putAll(createWizardsBruteForce(map, palette, paletteData, section.getYOffset()));
+                for (int i = 0; i < data.getSize(); i++) {
+                    var blockIndex = data.get(i);
+                    var poly = idsWithPolys[blockIndex];
+                    processBlock(poly, i, yOffset, wizardMap);
+                }
             }
-            //TODO implementation for Lithium's palette
-        }
+        } else {
+            // It's not worth iterating the palette, instead iterate the blocks in the data
+            if (data instanceof PackedIntegerArray) {
+                // Fast way of iterating the packed data with an index
+                int i = 0;
 
-        return ret;
+                var elementBits = data.getElementBits();
+                var elementsPerLong = (char)(64 / elementBits);
+                var maxValue = (1L << elementBits) - 1L;
+                var size = data.getSize();
+
+                data:
+                for (long l : data.getData()) {
+                    for (int j = 0; j < elementsPerLong; ++j) {
+                        var blockIndex = (int)(l & maxValue);
+                        var poly = polyMap.getBlockPoly(palette.get(blockIndex).getBlock());
+                        processBlock(poly, i, yOffset, wizardMap);
+
+                        l >>= elementBits;
+                        ++i;
+                        if (i >= size) {
+                            break data;
+                        }
+                    }
+                }
+            } else {
+                for (int i = 0; i < data.getSize(); i++) {
+                    var blockIndex = data.get(i);
+                    var poly = polyMap.getBlockPoly(palette.get(blockIndex).getBlock());
+                    processBlock(poly, i, yOffset, wizardMap);
+                }
+            }
+        }
     }
 
-    @Unique
-    private Map<BlockPos,Wizard> createWizardsBiMapPalette(PolyMap polyMap, BiMapPalette<BlockState> palette, PaletteStorage data, int yOffset) {
-        Int2ObjectMap<BlockPoly> idToWizMap = new Int2ObjectArrayMap<>(5);
-        Int2ObjectBiMap<BlockState> map = ((BiMapPaletteAccessor<BlockState>)palette).getMap();
-
-        int i = 0;
-        for (BlockState state : map) {
-            BlockPoly poly = polyMap.getBlockPoly(state.getBlock());
-            if (poly != null && poly.hasWizard()) {
-                idToWizMap.put(i, poly);
-            }
-            i++;
-        }
-
-        return createWizards(idToWizMap, data, yOffset);
-    }
-
-    @Unique
-    private Map<BlockPos,Wizard> createWizardsArrayPalette(PolyMap map, ArrayPalette<BlockState> palette, PaletteStorage data, int yOffset) {
-        Int2ObjectMap<BlockPoly> idToWizMap = new Int2ObjectArrayMap<>(5);
-        for (int i = 0; i < palette.getSize(); i++) {
-            BlockState state = palette.get(i);
-            if (state == null) continue;
-
-            BlockPoly poly = map.getBlockPoly(state.getBlock());
-            if (poly != null && poly.hasWizard()) {
-                idToWizMap.put(i, poly);
+    private void processBlock(BlockPoly poly, int index, int yOffset, Map<BlockPos,Wizard> wizardMap) {
+        if (poly != null) {
+            BlockPos pos = Util.fromPalettedContainerIndex(index).add(this.pos.x * 16, yOffset, this.pos.z * 16);
+            try {
+                var wiz = poly.createWizard(new PlacedWizardInfo(pos, (ServerWorld)this.world));
+                ((WizardTickerDuck)this.world).polymc$addTicker(wiz);
+                wizardMap.put(pos, wiz);
+            } catch (Throwable t) {
+                PolyMc.LOGGER.warn("Failed to create block wizard for block at "+pos+" | "+poly);
             }
         }
-
-        return createWizards(idToWizMap, data, yOffset);
-    }
-
-    /**
-     * @param knownWizards `ids -> polys` of blocks inside this palettedContainer that are known to have wizards. This should only contain polys with wizards, not all polys.
-     */
-    private Map<BlockPos,Wizard> createWizards(Int2ObjectMap<BlockPoly> knownWizards, PaletteStorage data, int yOffset) {
-        Map<BlockPos,Wizard> ret = new HashMap<>();
-
-        if (knownWizards.size() == 0) {
-            return ret;
-        }
-
-        for (int i = 0; i < data.getSize(); i++) {
-            int id = data.get(i);
-            BlockPoly poly = knownWizards.get(id);
-            if (poly != null) {
-                BlockPos pos = Util.fromPalettedContainerIndex(i).add(this.pos.x * 16, yOffset, this.pos.z * 16);
-                ret.put(pos, poly.createWizard((ServerWorld)this.world, Vec3d.of(pos).add(0.5, 0, 0.5), Wizard.WizardState.BLOCK));
-            }
-        }
-
-        return ret;
-    }
-
-    private Map<BlockPos,Wizard> createWizardsBruteForce(PolyMap map, Palette<BlockState> palette, PaletteStorage data, int yOffset) {
-        Map<BlockPos,Wizard> ret = new HashMap<>();
-
-        for (int i = 0; i < data.getSize(); i++) {
-            int id = data.get(i);
-
-            BlockState state = palette.get(id);
-            if (state == null)
-                throw new IllegalStateException(String.format("Id exists in data but not in palette. (local)ID: %d DATA: %s PALETTE: %s", id, data, palette));
-
-            BlockPoly poly = map.getBlockPoly(state.getBlock());
-            if (poly != null && poly.hasWizard()) {
-                BlockPos pos = Util.fromPalettedContainerIndex(i).add(this.pos.x * 16, yOffset, this.pos.z * 16);
-                ret.put(pos, poly.createWizard((ServerWorld)this.world, Vec3d.of(pos).add(0.5, 0, 0.5), Wizard.WizardState.BLOCK));
-            }
-        }
-
-        return ret;
     }
 
     @Override
     public void addPlayer(ServerPlayerEntity playerEntity) {
         PolyMap map = PolyMapProvider.getPolyMap(playerEntity);
-        this.wizards.get(map).values().forEach((wizard) -> wizard.addPlayer(playerEntity));
+        this.wizards.get(map).values().forEach((wizard) -> {
+            try {
+               wizard.addPlayer(playerEntity);
+            } catch (Throwable t) {
+                PolyMc.LOGGER.error("Failed to add player to wizard "+wizard);
+            }
+        });
         players.add(playerEntity);
     }
 
     @Override
     public void removePlayer(ServerPlayerEntity playerEntity) {
         PolyMap map = PolyMapProvider.getPolyMap(playerEntity);
-        this.wizards.get(map).values().forEach((wizard) -> wizard.removePlayer(playerEntity));
+        this.wizards.get(map).values().forEach((wizard) -> {
+            try {
+                wizard.removePlayer(playerEntity);
+            } catch (Throwable t) {
+                PolyMc.LOGGER.error("Failed to remove player from wizard "+wizard);
+            }
+        });
         players.remove(playerEntity);
     }
 
     @Override
     public void removeAllPlayers() {
-        this.wizards.values().forEach((wizardMap) -> wizardMap.values().forEach(WatchListener::removeAllPlayers));
+        this.wizards.values().forEach((wizardMap) -> wizardMap.values().forEach(wizard -> {
+            try {
+                wizard.removeAllPlayers();
+            } catch (Throwable t) {
+                PolyMc.LOGGER.error("Failed to remove all players from wizard "+wizard);
+            }
+            ((WizardTickerDuck)this.world).polymc$removeTicker(wizard);
+        }));
         this.wizards.clear();
         this.players.clear();
     }
@@ -180,15 +211,24 @@ public abstract class WorldChunkMixin extends Chunk implements WatchListener, Wi
     private void onSet(BlockPos pos, BlockState state, boolean moved, CallbackInfoReturnable<BlockState> cir) {
         wizards.forEach((polyMap, wizardMap) -> {
             Wizard oldWiz = wizardMap.remove(pos);
-            if (oldWiz != null) oldWiz.onRemove();
+            if (oldWiz != null) {
+                oldWiz.onRemove();
+                ((WizardTickerDuck)this.world).polymc$removeTicker(oldWiz);
+            }
 
             BlockPoly poly = polyMap.getBlockPoly(state.getBlock());
             if (poly != null && poly.hasWizard()) {
-                BlockPos ipos = pos.toImmutable();
-                Wizard wiz = poly.createWizard((ServerWorld)this.world, Vec3d.of(ipos).add(0.5, 0, 0.5), Wizard.WizardState.BLOCK);
-                wizardMap.put(ipos, wiz);
-                for (ServerPlayerEntity player : players) {
-                    wiz.addPlayer(player);
+                try {
+                    BlockPos ipos = pos.toImmutable();
+                    Wizard wiz = poly.createWizard(new PlacedWizardInfo(ipos, (ServerWorld)this.world));
+                    wizardMap.put(ipos, wiz);
+                    for (ServerPlayerEntity player : players) {
+                        wiz.addPlayer(player);
+                    }
+                    ((WizardTickerDuck)this.world).polymc$addTicker(wiz);
+                } catch (Throwable t) {
+                    PolyMc.LOGGER.error("Failed to create block wizard for "+state.getBlock().getTranslationKey()+" | "+poly);
+                    t.printStackTrace();
                 }
             }
         });
@@ -211,7 +251,13 @@ public abstract class WorldChunkMixin extends Chunk implements WatchListener, Wi
         this.wizards.forEach((polyMap, wizardMap) -> {
             Wizard wizard = wizardMap.remove(pos);
             if (wizard != null) {
-                if (!move) wizard.onRemove();
+                try {
+                    if (!move) wizard.onRemove();
+                } catch (Throwable t) {
+                    PolyMc.LOGGER.error("Failed to remove wizard "+wizard);
+                    t.printStackTrace();
+                }
+                ((WizardTickerDuck)this.world).polymc$removeTicker(wizard);
                 ret.put(polyMap, wizard);
             }
         });

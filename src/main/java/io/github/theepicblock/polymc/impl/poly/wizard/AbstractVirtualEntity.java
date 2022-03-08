@@ -40,6 +40,21 @@ public abstract class AbstractVirtualEntity implements VirtualEntity {
         ));
     }
 
+    public void spawn(ServerPlayerEntity playerEntity, Vec3d pos, float pitch, float yaw, int entityData, Vec3d velocity) {
+        playerEntity.networkHandler.sendPacket(new EntitySpawnS2CPacket(
+                this.id,
+                MathHelper.randomUuid(),
+                pos.getX(),
+                pos.getY(),
+                pos.getZ(),
+                pitch,
+                yaw,
+                this.getEntityType(),
+                entityData,
+                velocity
+        ));
+    }
+
     public void move(ServerPlayerEntity playerEntity, Vec3d pos, byte yaw, byte pitch, boolean onGround) {
         move(playerEntity, pos.getX(), pos.getY(), pos.getZ(), yaw, pitch, onGround);
     }
@@ -56,11 +71,29 @@ public abstract class AbstractVirtualEntity implements VirtualEntity {
         ));
     }
 
+    public void sendVelocity(ServerPlayerEntity playerEntity, Vec3d velocity) {
+        sendVelocity(playerEntity, velocity.x, velocity.y, velocity.z);
+    }
+
+    public void sendVelocity(ServerPlayerEntity playerEntity, double x, double y, double z) {
+        playerEntity.networkHandler.sendPacket(EntityUtil.createEntityVelocityUpdate(
+                this.id,
+                (int)(MathHelper.clamp(x, -3.9, 3.9) * 8000.0),
+                (int)(MathHelper.clamp(x, -3.9, 3.9) * 8000.0),
+                (int)(MathHelper.clamp(x, -3.9, 3.9) * 8000.0)
+        ));
+    }
+
     @Override
     public void remove(ServerPlayerEntity playerEntity) {
         playerEntity.networkHandler.sendPacket(
                 new EntitiesDestroyS2CPacket(this.id)
         );
+    }
+
+    @Override
+    public int getId() {
+        return this.id;
     }
 
     public void setSilent(ServerPlayerEntity playerEntity, boolean isSilent) {
@@ -79,14 +112,15 @@ public abstract class AbstractVirtualEntity implements VirtualEntity {
         ));
     }
 
-    public void sendFlags(ServerPlayerEntity playerEntity, boolean onFire, boolean sneaking, boolean sprinting, boolean swimming, boolean invisible, boolean glowing) {
+    public void sendFlags(ServerPlayerEntity playerEntity, boolean onFire, boolean sneaking, boolean sprinting, boolean swimming, boolean invisible, boolean glowing, boolean fallFlying) {
         byte flag = 0;
-        if (onFire)     flag += 0b00000001;
-        if (sneaking)   flag += 0b00000010;
-        if (sprinting)  flag += 0b00000100;
-        if (swimming)   flag += 0b00001000;
-        if (invisible)  flag += 0b00010000;
-        if (glowing)    flag += 0b00100000;
+        if (onFire)     flag += 1 << 0;
+        if (sneaking)   flag += 1 << 1;
+        if (sprinting)  flag += 1 << 3;
+        if (swimming)   flag += 1 << 4;
+        if (invisible)  flag += 1 << 5;
+        if (glowing)    flag += 1 << 6;
+        if (fallFlying) flag += 1 << 7;
 
         playerEntity.networkHandler.sendPacket(EntityUtil.createDataTrackerUpdate(
                 this.id,

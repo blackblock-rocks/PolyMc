@@ -1,9 +1,10 @@
 package io.github.theepicblock.polymc.mixins.wizards;
 
-import io.github.theepicblock.polymc.api.block.BlockPoly;
+import io.github.theepicblock.polymc.PolyMc;
 import io.github.theepicblock.polymc.api.misc.PolyMapProvider;
 import io.github.theepicblock.polymc.api.wizard.Wizard;
 import io.github.theepicblock.polymc.impl.misc.PolyMapMap;
+import io.github.theepicblock.polymc.impl.poly.wizard.PistonWizardInfo;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
@@ -11,8 +12,6 @@ import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,19 +27,22 @@ public abstract class MixinPistonBlockEntity extends BlockEntity {
     }
 
     @Shadow private BlockState pushedBlock;
-    @Shadow protected abstract float getAmountExtended(float progress);
-    @Shadow private float progress;
-    @Shadow private Direction facing;
+
+    @Shadow public abstract BlockState getPushedBlock();
 
     @Unique
     private final PolyMapMap<Wizard> wizards = new PolyMapMap<>((map) -> {
         if (!(world instanceof ServerWorld)) return null;
 
-        BlockPoly poly = map.getBlockPoly(this.pushedBlock.getBlock());
+        var block = this.getPushedBlock().getBlock();
+        var poly = map.getBlockPoly(block);
         if (poly != null && poly.hasWizard()) {
-            return poly.createWizard((ServerWorld)this.world,
-                    Vec3d.of(this.getPos()).add(0.5, 0, 0.5),
-                    Wizard.WizardState.FALLING_BLOCK);
+            try {
+                return poly.createWizard(new PistonWizardInfo((PistonBlockEntity)(Object)this));
+            } catch (Throwable t) {
+                PolyMc.LOGGER.error("Failed to create block wizard for "+block.getTranslationKey()+" | "+poly);
+                t.printStackTrace();
+            }
         }
         return null;
     });
@@ -68,14 +70,12 @@ public abstract class MixinPistonBlockEntity extends BlockEntity {
     @Inject(method = "tick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/entity/PistonBlockEntity;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/entity/PistonBlockEntity;pushEntities(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;FLnet/minecraft/block/entity/PistonBlockEntity;)V"))
     private static void onTick(World world, BlockPos pos, BlockState state, PistonBlockEntity blockEntity, CallbackInfo ci) {
         MixinPistonBlockEntity be = (MixinPistonBlockEntity)(Object)blockEntity;
-
-        float d = be.getAmountExtended(be.progress);
+        if (be == null) return;
 
         be.wizards.forEach((polyMap, wizard) -> {
-            if (wizard != null) wizard.updatePosition(Vec3d.of(be.getPos()).add(
-                    0.5+d*be.facing.getOffsetX(),
-                    d*be.facing.getOffsetY(),
-                    0.5+d*be.facing.getOffsetZ()));
+            if (wizard == null) return;
+            wizard.onMove(); // Pistons move constantly
+            wizard.onTick();
         });
     }
 

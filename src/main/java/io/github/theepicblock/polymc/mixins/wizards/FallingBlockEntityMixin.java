@@ -1,16 +1,18 @@
 package io.github.theepicblock.polymc.mixins.wizards;
 
-import io.github.theepicblock.polymc.api.block.BlockPoly;
+import io.github.theepicblock.polymc.PolyMc;
 import io.github.theepicblock.polymc.api.wizard.Wizard;
 import io.github.theepicblock.polymc.api.wizard.WizardView;
 import io.github.theepicblock.polymc.impl.misc.PolyMapMap;
 import io.github.theepicblock.polymc.impl.misc.WatchListener;
+import io.github.theepicblock.polymc.impl.poly.wizard.FallingBlockWizardInfo;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -18,6 +20,8 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 @Mixin(FallingBlockEntity.class)
 public abstract class FallingBlockEntityMixin extends Entity implements WatchListener {
@@ -27,9 +31,15 @@ public abstract class FallingBlockEntityMixin extends Entity implements WatchLis
     private final PolyMapMap<Wizard> wizards = new PolyMapMap<>((map) -> {
         if (!(world instanceof ServerWorld)) return null;
 
-        BlockPoly poly = map.getBlockPoly(this.block.getBlock());
+        var block = this.block.getBlock();
+        var poly = map.getBlockPoly(block);
         if (poly != null && poly.hasWizard()) {
-            return poly.createWizard((ServerWorld)this.world, this.getPos(), Wizard.WizardState.FALLING_BLOCK);
+            try {
+                return poly.createWizard(new FallingBlockWizardInfo((FallingBlockEntity)(Object)this));
+            } catch (Throwable t) {
+                PolyMc.LOGGER.error("Failed to create block wizard for "+block.getTranslationKey()+" | "+poly);
+                t.printStackTrace();
+            }
         }
         return null;
     });
@@ -38,20 +48,22 @@ public abstract class FallingBlockEntityMixin extends Entity implements WatchLis
         super(type, world);
     }
 
-    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;removeBlock(Lnet/minecraft/util/math/BlockPos;Z)Z"))
-    private void onFirstTick(CallbackInfo ci) {
+    @Inject(method = "spawnFromBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"), locals = LocalCapture.CAPTURE_FAILHARD)
+    private static void onSpawnFromBlock(World world, BlockPos pos, BlockState state, CallbackInfoReturnable<FallingBlockEntity> cir, FallingBlockEntity entity) {
         //When a falling block falls. The block is actually removed by the falling block entity on the first tick.
-        PolyMapMap<Wizard> previousWizards = WizardView.removeWizards(this.world, this.getBlockPos(), true);
+        PolyMapMap<Wizard> previousWizards = WizardView.removeWizards(world, pos, true);
         previousWizards.forEach((polyMap, wizard) -> {
-            wizard.setState(Wizard.WizardState.FALLING_BLOCK);
+            wizard.changeInfo(new FallingBlockWizardInfo(entity));
         });
-        this.wizards.putAll(previousWizards);
+        ((FallingBlockEntityMixin)(Object)entity).wizards.putAll(previousWizards);
     }
 
     @Inject(method = "tick", at = @At("RETURN"))
     private void onTick(CallbackInfo ci) {
         wizards.forEach(((polyMap, wizard) -> {
-            if (wizard != null) wizard.updatePosition(this.getPos());
+            if (wizard == null) return;
+            wizard.onMove(); // It is assumed that sand is constantly falling
+            wizard.onTick();
         }));
     }
 

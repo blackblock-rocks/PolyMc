@@ -74,14 +74,23 @@ public class ArmorColorManager implements SharedValuesKey.ResourceContainer {
                 try {
                     var texturePath = "models/armor/" + material.getName() + "_layer_" + layer;
                     var texture = moddedResources.getTexture("minecraft", texturePath);
-                    if (texture == null) continue;
+                    if (texture == null) {
+                        logger.warn("Couldn't find armor texture for "+material.getName()+", it won't display correctly when worn");
+                        continue;
+                    }
 
                     var moddedImage = ImageIO.read(texture.getTexture());
-                    if (moddedImage == null) continue;
+                    if (moddedImage == null) {
+                        logger.warn("Couldn't read layer "+layer+" armor texture for "+material.getName());
+                        continue;
+                    }
 
                     moddedTextures.put(material, moddedImage);
                     outputHeight = Math.max(outputHeight, moddedImage.getHeight());
                     outputWidth += moddedImage.getWidth();
+
+                    // Write the modded armor textures standalone
+                    pack.setTexture("minecraft", texturePath, moddedResources.getTexture("minecraft", texturePath));
                 } catch (IOException e) {
                     logger.error("Couldn't read armor texture "+material.getName()+" (layer #"+layer+")");
                     e.printStackTrace();
@@ -113,6 +122,7 @@ public class ArmorColorManager implements SharedValuesKey.ResourceContainer {
                 var material = entry.getKey();
                 var color = entry.getIntValue();
                 var texture = moddedTextures.get(material);
+                if (texture == null) continue;
 
                 graphics.drawImage(texture, xIndex, 0, null);
 

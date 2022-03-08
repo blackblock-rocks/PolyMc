@@ -2,18 +2,25 @@ plugins {
 	id 'fabric-loom' version '0.10-SNAPSHOT'
 	id 'maven-publish'
 	id "io.github.juuxel.loom-quiltflower-mini" version "1.0.0"
+	id 'org.ajoberstar.grgit' version '4.1.0'
 }
 
 sourceCompatibility = JavaVersion.VERSION_16
 targetCompatibility = JavaVersion.VERSION_16
 
 archivesBaseName = project.archives_base_name
-version = "${project.mod_version}+${project.minecraft_version}"
+version = "${project.mod_version}${getVersionMetadata()}+${project.minecraft_version}"
 group = project.maven_group
 
 repositories {
 	maven {
 		url "https://jitpack.io"
+	}
+	maven {
+		url "https://maven.theepicblock.nl"
+		content {
+			includeGroup("nl.theepicblock")
+		}
 	}
 }
 
@@ -23,7 +30,7 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	modImplementation include("com.github.theepicblock:resource-locator-api:${project.resource_lookup_api_version}")
+	modImplementation include("nl.theepicblock:resource-locator-api:${project.resource_lookup_api_version}")
 
 	modCompileOnly "com.github.CaffeineMC.lithium-fabric:lithium:${project.lithium_version}"
 }
@@ -53,14 +60,27 @@ loom {
 			name = "Test Mod Server"
 			source sourceSets.testmod
 		}
-		datagenServer {
+		datagen {
 			server()
-			name = "Datagen Server (Do not use)"
+			ideConfigGenerated false
 			source sourceSets.datagen
 		}
 	}
 
 	accessWidenerPath = file("src/main/resources/polymc.accesswidener")
+}
+
+task testmodJar(type: Jar) {
+	classifier "testmod-dev"
+
+	from sourceSets.testmod.output
+}
+
+task remapTestmodJar(type: net.fabricmc.loom.task.RemapJarTask, dependsOn: testmodJar) {
+	classifier "testmod"
+
+	input = testmodJar.archiveFile.get().asFile
+	addNestedDependencies = false
 }
 
 processResources {
@@ -75,12 +95,45 @@ processResources {
 def datagenDir = "$rootProject.buildDir/polymc-datagen/$project.minecraft_version"
 sourceSets.main.resources.srcDirs += datagenDir
 
-runDatagenServer {
+runDatagen {
 	environment("output-dir", datagenDir)
 }
 
-if (!file(datagenDir).exists()) {
-	build.dependsOn(":runDatagenServer")
+build.doLast {
+	if (!file(datagenDir).exists()) {
+		logger.error("!! Datagen hasn't been run. Vanilla ids aren't included in the build")
+	}
+}
+
+task getClientSha1 {
+	doLast {
+		def loomExt = net.fabricmc.loom.LoomGradleExtension.get(project)
+		def mcProvider = loomExt.getMinecraftProvider()
+		println(mcProvider.getVersionInfo().download("client").sha1())
+	}
+}
+
+def getVersionMetadata() {
+	if (grgit != null) {
+		def head = grgit.head()
+		def headTag = grgit.tag.list().find {
+			it.commit == head
+		}
+
+		if (headTag) {
+			return "" // This is a release
+		}
+
+		def id = head.abbreviatedId
+
+		// Flag the build if the build tree is not clean
+		if (!grgit.status().clean) {
+			id += "-dirty"
+		}
+
+		return "-rev.${id}"
+	}
+	return "";
 }
 
 // Ensure that the encoding is set to UTF-8, no matter what the system default is
@@ -113,6 +166,10 @@ publishing {
 	}
 
 	repositories {
-		 mavenLocal()
+		maven {
+			name = "teb"
+			credentials(PasswordCredentials)
+			url = "https://maven.theepicblock.nl"
+		}
 	}
 }

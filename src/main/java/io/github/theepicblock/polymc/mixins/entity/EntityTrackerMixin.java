@@ -1,8 +1,10 @@
 package io.github.theepicblock.polymc.mixins.entity;
 
+import io.github.theepicblock.polymc.PolyMc;
 import io.github.theepicblock.polymc.api.misc.PolyMapProvider;
 import io.github.theepicblock.polymc.api.wizard.Wizard;
 import io.github.theepicblock.polymc.impl.misc.PolyMapMap;
+import io.github.theepicblock.polymc.impl.poly.wizard.EntityWizardInfo;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.server.network.EntityTrackerEntry;
@@ -26,13 +28,26 @@ public class EntityTrackerMixin {
     private final PolyMapMap<Wizard> wizards = new PolyMapMap<>(polyMap -> {
         var poly = polyMap.getEntityPoly((EntityType<Entity>)this.entity.getType());
         if (poly == null) return null;
-        return poly.createWizard(this.world, this.entity.getPos(), this.entity);
+        try {
+            return poly.createWizard(new EntityWizardInfo(this.entity), this.entity);
+        } catch (Throwable t) {
+            PolyMc.LOGGER.error("Failed to create block wizard for "+this.entity+" | "+poly);
+            t.printStackTrace();
+            return null;
+        }
     });
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTick(CallbackInfo ci) {
         wizards.forEach((polyMap, wizard) -> {
-            if (wizard != null) wizard.updatePosition(this.entity.getPos());
+            if (wizard == null) return;
+            try {
+                wizard.onMove(); // TODO check if the entity actually moved
+                wizard.onTick();
+            } catch (Throwable t) {
+                PolyMc.LOGGER.error("Error ticking entity wizard");
+                t.printStackTrace();
+            }
         });
     }
 
@@ -41,7 +56,12 @@ public class EntityTrackerMixin {
         var polymap = PolyMapProvider.getPolyMap(player);
         var wizard = wizards.get(polymap);
         if (wizard != null) {
-            wizard.addPlayer(player);
+            try {
+                wizard.addPlayer(player);
+            } catch (Throwable t) {
+                PolyMc.LOGGER.error("Error adding player to entity wizard");
+                t.printStackTrace();
+            }
         }
     }
 
@@ -50,7 +70,12 @@ public class EntityTrackerMixin {
         var polymap = PolyMapProvider.getPolyMap(player);
         var wizard = wizards.get(polymap);
         if (wizard != null) {
-            wizard.removePlayer(player);
+            try {
+                wizard.removePlayer(player);
+            } catch (Throwable t) {
+                PolyMc.LOGGER.error("Error adding player to entity wizard");
+                t.printStackTrace();
+            }
         }
     }
 }
