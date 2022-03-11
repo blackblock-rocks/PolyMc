@@ -64,6 +64,7 @@ public class BlockStateProfile {
     private static final Block[] NO_COLLISION_BLOCKS = {Blocks.SUGAR_CANE,
             Blocks.ACACIA_SAPLING, Blocks.BIRCH_SAPLING, Blocks.DARK_OAK_SAPLING, Blocks.JUNGLE_SAPLING, Blocks.OAK_SAPLING,
             Blocks.TRIPWIRE};
+    private static final Block[] CLIMBABLE_BLOCKS = {Blocks.CAVE_VINES, Blocks.WEEPING_VINES, Blocks.TWISTING_VINES};
     private static final Block[] DOOR_BLOCKS = {Blocks.ACACIA_DOOR,Blocks.BIRCH_DOOR,Blocks.DARK_OAK_DOOR,Blocks.JUNGLE_DOOR,Blocks.OAK_DOOR,Blocks.SPRUCE_DOOR,Blocks.CRIMSON_DOOR,Blocks.WARPED_DOOR};
     private static final Block[] TRAPDOOR_BLOCKS = {Blocks.ACACIA_TRAPDOOR,Blocks.BIRCH_TRAPDOOR,Blocks.DARK_OAK_TRAPDOOR,Blocks.JUNGLE_TRAPDOOR,Blocks.OAK_TRAPDOOR,Blocks.SPRUCE_TRAPDOOR,Blocks.CRIMSON_TRAPDOOR,Blocks.WARPED_TRAPDOOR};
     private static final Block[] WAXED_COPPER_STAIR_BLOCKS = {Blocks.WAXED_CUT_COPPER_STAIRS, Blocks.WAXED_EXPOSED_CUT_COPPER_STAIRS, Blocks.WAXED_WEATHERED_CUT_COPPER_STAIRS, Blocks.WAXED_OXIDIZED_CUT_COPPER_STAIRS};
@@ -77,6 +78,23 @@ public class BlockStateProfile {
         } else {
             return DEFAULT_FILTER.test(blockState);
         }
+    };
+    private static final Predicate<BlockState> CLIMBABLE_FILTER = (blockState) -> {
+
+        if (blockState.getBlock() == Blocks.CAVE_VINES) {
+
+            // Don't use any state with age 0
+            if (blockState.get(Properties.AGE_25) == 0) {
+                return false;
+            }
+
+            // Don't use states with berries (they cause block updates on right click)
+            if (blockState.get(CaveVines.BERRIES) == true) {
+                return false;
+            }
+        }
+
+        return DEFAULT_FILTER.test(blockState);
     };
     private static final Predicate<BlockState> ALWAYS_TRUE_FILTER = (blockState) -> true;
     private static final Predicate<BlockState> FARMLAND_FILTER = (blockState) -> {
@@ -341,6 +359,17 @@ public class BlockStateProfile {
             polyRegistry.registerBlockPoly(block, new SimpleReplacementPoly(block.getDefaultState()));
         }
     };
+    private static final BiConsumer<Block,PolyRegistry> CLIMBABLE_ON_FIRST_REGISTER = (block, polyRegistry) -> {
+
+        if (block == Blocks.CAVE_VINES) {
+            polyRegistry.registerBlockPoly(block, (input) ->
+                    // Force the age to be zero, but let the "berries" be whatever it is
+                    input.with(Properties.AGE_25, 0)
+            );
+        } else {
+            polyRegistry.registerBlockPoly(block, new SimpleReplacementPoly(block.getDefaultState()));
+        }
+    };
     private static final BiConsumer<Block,PolyRegistry> SCULK_SENSOR_ON_FIRST_REGISTER = (block, polyRegistry) -> {
         polyRegistry.registerBlockPoly(block, (input) ->
                 input.with(SculkSensorBlock.POWER, 0)
@@ -371,6 +400,8 @@ public class BlockStateProfile {
 
     public static final BlockStateProfile LEAVES_PROFILE = getProfileWithDefaultFilter("leaves", LEAVES_BLOCKS);
     public static final BlockStateProfile NO_COLLISION_PROFILE = new BlockStateProfile("blocks without collisions", NO_COLLISION_BLOCKS, NO_COLLISION_FILTER, NO_COLLISION_ON_FIRST_REGISTER);
+    public static final BlockStateProfile CLIMBABLE_PROFILE = new BlockStateProfile("climbable blocks", CLIMBABLE_BLOCKS, CLIMBABLE_FILTER, CLIMBABLE_ON_FIRST_REGISTER);
+
     public static final BlockStateProfile PETRIFIED_OAK_SLAB_PROFILE = new BlockStateProfile("petrified oak slab", Blocks.PETRIFIED_OAK_SLAB, ALWAYS_TRUE_FILTER, PETRIFIED_OAK_SLAB_ON_FIRST_REGISTER);
     public static final BlockStateProfile FARMLAND_PROFILE = new BlockStateProfile("farmland", Blocks.FARMLAND, FARMLAND_FILTER, FARMLAND_ON_FIRST_REGISTER);
     public static final BlockStateProfile CACTUS_PROFILE = getProfileWithDefaultFilter("cactus", Blocks.CACTUS);

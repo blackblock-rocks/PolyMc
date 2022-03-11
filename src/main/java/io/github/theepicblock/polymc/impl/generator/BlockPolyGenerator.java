@@ -211,6 +211,12 @@ public class BlockPolyGenerator {
         //=== NO COLLISION BLOCKS ===
         if (collisionShape.isEmpty()) {
             try {
+
+                if (moddedState.isIn(BlockTags.CLIMBABLE)) {
+                    isUniqueCallback.set(true);
+                    return manager.requestBlockState(BlockStateProfile.CLIMBABLE_PROFILE);
+                }
+
                 if (moddedState.getFluidState().isEmpty()) {
                     isUniqueCallback.set(true);
                     return manager.requestBlockState(BlockStateProfile.NO_COLLISION_PROFILE);
