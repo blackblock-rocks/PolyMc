@@ -114,25 +114,6 @@ task getClientSha1 {
 }
 
 def getVersionMetadata() {
-	if (grgit != null) {
-		def head = grgit.head()
-		def headTag = grgit.tag.list().find {
-			it.commit == head
-		}
-
-		if (headTag) {
-			return "" // This is a release
-		}
-
-		def id = head.abbreviatedId
-
-		// Flag the build if the build tree is not clean
-		if (!grgit.status().clean) {
-			id += "-dirty"
-		}
-
-		return "-rev.${id}"
-	}
 	return "";
 }
 
