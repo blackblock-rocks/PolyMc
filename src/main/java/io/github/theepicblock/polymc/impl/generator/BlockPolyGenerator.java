@@ -34,6 +34,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.state.property.Property;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
@@ -240,6 +241,47 @@ public class BlockPolyGenerator {
             try {
                 isUniqueCallback.set(true);
                 return manager.requestBlockState(BlockStateProfile.CACTUS_PROFILE);
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+        }
+
+        //=== BLOCKS WITH A FULL TOP SIDE ===
+        if (Block.isFaceFullSquare(collisionShape, Direction.UP)) {
+
+            if (!moddedState.isOpaque()) {
+                // Chorus flowers are full cubes & are not opaque.
+                // There are only 4 available states to reuse though
+                try {
+                    isUniqueCallback.set(true);
+                    return manager.requestBlockState(BlockStateProfile.CHORUS_FLOWER_BLOCK_PROFILE);
+                } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
+                // Chorus plants are actually not a full cube. Each state has a different collision box
+                // Not a huge deal in theory, but in practice the server will complain and people walking on
+                // or against the block will have jitter
+                try {
+                    isUniqueCallback.set(true);
+                    return manager.requestBlockState(BlockStateProfile.CHORUS_PLANT_BLOCK_PROFILE);
+                } catch (BlockStateManager.StateLimitReachedException ignored) {}
+            }
+
+            try {
+                isUniqueCallback.set(true);
+                return manager.requestBlockState(BlockStateProfile.BROWN_MUSHROOM_BLOCK_PROFILE);
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
+            try {
+                isUniqueCallback.set(true);
+                return manager.requestBlockState(BlockStateProfile.RED_MUSHROOM_BLOCK_PROFILE);
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
+            try {
+                isUniqueCallback.set(true);
+                return manager.requestBlockState(BlockStateProfile.STEM_MUSHROOM_BLOCK_PROFILE);
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
+            try {
+                isUniqueCallback.set(true);
+                return manager.requestBlockState(BlockStateProfile.NOTE_BLOCK_PROFILE);
             } catch (BlockStateManager.StateLimitReachedException ignored) {}
         }
 
