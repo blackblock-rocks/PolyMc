@@ -61,6 +61,11 @@ public class ItemPolyGenerator {
             }
             return new DamageableItemPoly(cmdManager, item);
         }
+
+        if (item instanceof PotionItem){
+            return new CustomModelDataPoly(cmdManager, item, CustomModelDataManager.FOOD_ITEMS);
+        }
+
         if (item.isFood()) {
             return new CustomModelDataPoly(cmdManager, item, CustomModelDataManager.FOOD_ITEMS);
         }
