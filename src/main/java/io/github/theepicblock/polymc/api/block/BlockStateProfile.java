@@ -31,7 +31,6 @@ import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.Direction;
 import org.apache.commons.lang3.ArrayUtils;
 
-import net.minecraft.util.math.Direction;
 import net.minecraft.state.property.BooleanProperty;
 
 import java.util.Arrays;
@@ -86,6 +85,7 @@ public class BlockStateProfile {
     private static final Block[] BEEHIVE_BLOCKS = {Blocks.BEEHIVE, Blocks.BEE_NEST};
     private static final Block[] SNOWY_GRASS_BLOCKS = {Blocks.MYCELIUM, Blocks.PODZOL}; // Snowy mycelium and podzol look the same as snowy grass
     private static final Block[] WATERLOGGED_SLABS = {Blocks.SMOOTH_STONE_SLAB}; // Smooth stone double slabs do not look like regular smooth stone blocks. Therefore, only the waterlogged double slab is available to us.
+    private static final Block[] PRESSURE_PLATE_BLOCKS = {Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE, Blocks.HEAVY_WEIGHTED_PRESSURE_PLATE};
 
     //FILTERS
     private static final Predicate<BlockState> DEFAULT_FILTER = (blockState) -> blockState != blockState.getBlock().getDefaultState();
@@ -115,6 +115,10 @@ public class BlockStateProfile {
     };
     private static final Predicate<BlockState> ALWAYS_TRUE_FILTER = (blockState) -> true;
     private static final Predicate<BlockState> TRIPWIRE_FILTER = BlockStateProfile::isStringUseable;
+    private static final Predicate<BlockState> TRIPWIRE_THIN_FILTER = BlockStateProfile::isThinTripwireUsable;
+    private static final Predicate<BlockState> TRIPWIRE_THICK_FILTER = BlockStateProfile::isThickTripwireUsable;
+    private static final Predicate<BlockState> PRESSURE_PLATE_FILTER = BlockStateProfile::isPressurePlateUsable;
+
     private static final Predicate<BlockState> SMALL_DRIPLEAF_FILTER = state -> state.get(TallPlantBlock.HALF) == DoubleBlockHalf.LOWER && state.get(SmallDripleafBlock.FACING) != Direction.NORTH;
     private static final Predicate<BlockState> CAVE_VINES_FILTER = state -> state.get(AbstractPlantStemBlock.AGE) != 0;
     private static final Predicate<BlockState> FARMLAND_FILTER = (blockState) -> {
@@ -420,6 +424,13 @@ public class BlockStateProfile {
         return input;
     });
 
+    private static final BiConsumer<Block,PolyRegistry> PRESSURE_PLATE_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, (input) -> {
+        if (input.get(Properties.POWER) > 1) {
+            return input.with(Properties.POWER, 1);
+        }
+        return input;
+    });
+
     private static final BiConsumer<Block,PolyRegistry> POWERED_BLOCK_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, (input) -> input.with(Properties.POWERED, false));
     private static final BiConsumer<Block,PolyRegistry> TRIGGERED_BLOCK_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, (input) -> input.with(Properties.TRIGGERED, false));
     private static final BiConsumer<Block,PolyRegistry> SNOWY_GRASS_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, input -> {
@@ -475,6 +486,8 @@ public class BlockStateProfile {
 
     // SUB PROFILES
     public static final BlockStateProfile SAPLING_SUB_PROFILE = getProfileWithDefaultFilter("sapling", SAPLING_BLOCKS);
+    public static final BlockStateProfile TRIPWIRE_THIN_PROFILE = new BlockStateProfile("thin tripwire", Blocks.TRIPWIRE, TRIPWIRE_THIN_FILTER, TRIPWIRE_ON_FIRST_REGISTER);
+    public static final BlockStateProfile TRIPWIRE_THICK_PROFILE = new BlockStateProfile("thick tripwire", Blocks.TRIPWIRE, TRIPWIRE_THICK_FILTER, TRIPWIRE_ON_FIRST_REGISTER);
     public static final BlockStateProfile TRIPWIRE_SUB_PROFILE = new BlockStateProfile("tripwire", Blocks.TRIPWIRE, TRIPWIRE_FILTER, TRIPWIRE_ON_FIRST_REGISTER);
     public static final BlockStateProfile SMALL_DRIPLEAF_SUB_PROFILE = new BlockStateProfile("drip leaf", Blocks.SMALL_DRIPLEAF, SMALL_DRIPLEAF_FILTER, SMALL_DRIPLEAF_ON_FIRST_REGISTER);
     //public static final BlockStateProfile CAVE_VINES_SUB_PROFILE = new BlockStateProfile("cave vines", Blocks.CAVE_VINES, CAVE_VINES_FILTER, CAVE_VINES_ON_FIRST_REGISTER);
@@ -495,6 +508,8 @@ public class BlockStateProfile {
     public static final BlockStateProfile OPEN_FENCE_GATE_PROFILE = new BlockStateProfile("open fence gate", FENCE_GATE_BLOCKS, OPEN_FENCE_GATE_FILTER, POWERED_BLOCK_ON_FIRST_REGISTER);
     public static final BlockStateProfile FENCE_GATE_PROFILE = new BlockStateProfile("fence gate", FENCE_GATE_BLOCKS, FENCE_GATE_FILTER, POWERED_BLOCK_ON_FIRST_REGISTER);
 
+    public static final BlockStateProfile PRESSURE_PLATE_PROFILE = new BlockStateProfile("pressure plate", PRESSURE_PLATE_BLOCKS, PRESSURE_PLATE_FILTER, PRESSURE_PLATE_ON_FIRST_REGISTER);
+
     //PROFILES
     public static final BlockStateProfile BROWN_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("brown mushroom block", Blocks.BROWN_MUSHROOM_BLOCK, BROWN_MUSHROOM_FILTER, BROWN_MUSHROOM_ON_FIRST_REGISTER);
     public static final BlockStateProfile RED_MUSHROOM_BLOCK_PROFILE = new BlockStateProfile("red mushroom block", Blocks.RED_MUSHROOM_BLOCK, RED_MUSHROOM_FILTER, RED_MUSHROOM_ON_FIRST_REGISTER);
@@ -505,7 +520,13 @@ public class BlockStateProfile {
 
     public static final BlockStateProfile FULL_BLOCK_PROFILE = combine("full blocks", INFESTED_STONE_SUB_PROFILE, /*TNT_SUB_PROFILE,*/ SNOWY_GRASS_SUB_PROFILE, NOTE_BLOCK_SUB_PROFILE, DISPENSER_SUB_PROFILE, BEEHIVE_SUB_PROFILE, WAXED_COPPER_FULLBLOCK_SUB_PROFILE, JUKEBOX_SUB_PROFILE, DOUBLE_SLAB_SUB_PROFILE, TARGET_BLOCK_SUB_PROFILE, WATERLOGGED_SLAB_SUB_PROFILE);
     public static final BlockStateProfile LEAVES_PROFILE = getProfileWithDefaultFilter("leaves", LEAVES_BLOCKS);
-    public static final BlockStateProfile NO_COLLISION_PROFILE = combine("blocks without collisions", KELP_SUB_PROFILE, SAPLING_SUB_PROFILE, /*CAVE_VINES_SUB_PROFILE,*/ TRIPWIRE_SUB_PROFILE, SMALL_DRIPLEAF_SUB_PROFILE, OPEN_FENCE_GATE_PROFILE);
+
+    // "Opaque" meaning the texture cannot be see-through
+    // @TODO: Dripleaf blocks have a visually random positioning
+    public static final BlockStateProfile NO_COLLISION_OPAQUE_PROFILE = combine("opaque blocks without collisions", KELP_SUB_PROFILE, SAPLING_SUB_PROFILE, /*CAVE_VINES_SUB_PROFILE,*/ OPEN_FENCE_GATE_PROFILE, SMALL_DRIPLEAF_SUB_PROFILE);
+    public static final BlockStateProfile NO_COLLISION_TRANSLUCENT_PROFILE = combine("translucent blocks without collisions", TRIPWIRE_THICK_PROFILE, TRIPWIRE_THIN_PROFILE);
+    public static final BlockStateProfile NO_COLLISION_LOW_PROFILE = combine("blocks with a low profile", TRIPWIRE_THIN_PROFILE, TRIPWIRE_THICK_PROFILE);
+
     public static final BlockStateProfile CLIMBABLE_PROFILE = new BlockStateProfile("climbable blocks", CLIMBABLE_BLOCKS, CLIMBABLE_FILTER, CLIMBABLE_ON_FIRST_REGISTER);
 
     //public static final BlockStateProfile PETRIFIED_OAK_SLAB_PROFILE = new BlockStateProfile("petrified oak slab", Blocks.PETRIFIED_OAK_SLAB, ALWAYS_TRUE_FILTER, PETRIFIED_OAK_SLAB_ON_FIRST_REGISTER);
@@ -554,9 +575,31 @@ public class BlockStateProfile {
         );
     }
 
+    // "Thin" tripwires have the same height as a carpet (though hover 1 pixel above the ground)
+    private static boolean isThinTripwireUsable(BlockState state) {
+        if (isStringUseable(state)) {
+            return state.get(Properties.ATTACHED) == true;
+        }
+
+        return false;
+    }
+
+    // "Thick" tripwires have the same height as a bottom slab
+    private static boolean isThickTripwireUsable(BlockState state) {
+        if (isStringUseable(state)) {
+            return state.get(Properties.ATTACHED) == false;
+        }
+
+        return false;
+    }
+
     private static boolean isStringUseable(BlockState state) {
         return  state.get(Properties.POWERED) == true ||
                 state.get(TripwireBlock.DISARMED) == true;
+    }
+
+    private static boolean isPressurePlateUsable(BlockState state) {
+        return state.get(Properties.POWER) > 1;
     }
 
     public BlockStateProfile and(Predicate<BlockState> filter) {

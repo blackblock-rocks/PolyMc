@@ -214,14 +214,64 @@ public class BlockPolyGenerator {
         //=== NO COLLISION BLOCKS ===
         if (collisionShape.isEmpty()) {
             try {
-
                 if (moddedState.isIn(BlockTags.CLIMBABLE)) {
                     isUniqueCallback.set(true);
                     return manager.requestBlockState(BlockStateProfile.CLIMBABLE_PROFILE);
                 }
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
 
+            // Portal block textures can be translucent
+            if (moddedBlock instanceof NetherPortalBlock) {
+                try {
+
+                    isUniqueCallback.set(true);
+                    return manager.requestBlockState(BlockStateProfile.NO_COLLISION_TRANSLUCENT_PROFILE.and(
+                            state -> moddedState.getFluidState().equals(state.getFluidState())
+                    ));
+                } catch (BlockStateManager.StateLimitReachedException ignored) {}
+            }
+
+            // If it's a non-collision carpet, try to use a tripwire
+            if (moddedBlock instanceof CarpetBlock) {
+
+                // Use pressure plates first
+                try {
+                    isUniqueCallback.set(true);
+                    return manager.requestBlockState(BlockStateProfile.PRESSURE_PLATE_PROFILE.and(
+                            state -> moddedState.getFluidState().equals(state.getFluidState())
+                    ));
+
+                } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
+                try {
+                    isUniqueCallback.set(true);
+                    return manager.requestBlockState(BlockStateProfile.NO_COLLISION_LOW_PROFILE.and(
+                            state -> moddedState.getFluidState().equals(state.getFluidState())
+                    ));
+
+                } catch (BlockStateManager.StateLimitReachedException ignored) {}
+            }
+
+            if (!moddedState.isOpaque()) {
+                try {
+                    isUniqueCallback.set(true);
+                    return manager.requestBlockState(BlockStateProfile.NO_COLLISION_TRANSLUCENT_PROFILE.and(
+                            state -> moddedState.getFluidState().equals(state.getFluidState())
+                    ));
+
+                } catch (BlockStateManager.StateLimitReachedException ignored) {}
+            }
+
+            try {
                 isUniqueCallback.set(true);
-                return manager.requestBlockState(BlockStateProfile.NO_COLLISION_PROFILE.and(
+                return manager.requestBlockState(BlockStateProfile.NO_COLLISION_OPAQUE_PROFILE.and(
+                        state -> moddedState.getFluidState().equals(state.getFluidState())
+                ));
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+
+            try {
+                isUniqueCallback.set(true);
+                return manager.requestBlockState(BlockStateProfile.NO_COLLISION_TRANSLUCENT_PROFILE.and(
                     state -> moddedState.getFluidState().equals(state.getFluidState())
                 ));
                 
