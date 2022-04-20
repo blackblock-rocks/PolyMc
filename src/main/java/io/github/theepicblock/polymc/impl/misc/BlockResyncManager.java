@@ -76,6 +76,11 @@ public class BlockResyncManager {
             return false;
         }
 
+        // Wall blocks update whenever a block updates around them
+        if (block instanceof WallBlock) {
+            return true;
+        }
+
         if (block == Blocks.NOTE_BLOCK) {
             return direction == Direction.UP;
         } else if (block == Blocks.MYCELIUM || block == Blocks.PODZOL) {
@@ -125,6 +130,17 @@ public class BlockResyncManager {
                     checkedBlocks.add(sourcePos);
 
                     _onBlockUpdate(clientState, newPos, world, player, checkedBlocks, level + 1);
+                }
+            } else {
+                Block block = state.getBlock();
+
+                // Always send wallblock updates
+                if (block instanceof WallBlock) {
+                    BlockPos newPos = pos.toImmutable();
+                    player.networkHandler.sendPacket(new BlockUpdateS2CPacket(newPos, state));
+                    checkedBlocks.add(sourcePos);
+
+                    _onBlockUpdate(state, newPos, world, player, checkedBlocks, level + 1);
                 }
             }
 

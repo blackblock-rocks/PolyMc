@@ -294,6 +294,25 @@ public class BlockPolyGenerator {
             } catch (BlockStateManager.StateLimitReachedException ignored) {}
         }
 
+
+        Direction.Axis wall_axis = getWallAxis(collisionShape, moddedState);
+
+        if (wall_axis == Direction.Axis.X) {
+            try {
+                isUniqueCallback.set(true);
+                return manager.requestBlockState(BlockStateProfile.WALL_X_PROFILE.and(
+                        state -> moddedState.getFluidState().equals(state.getFluidState())
+                ));
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+        } else if (wall_axis == Direction.Axis.Z) {
+            try {
+                isUniqueCallback.set(true);
+                return manager.requestBlockState(BlockStateProfile.WALL_Z_PROFILE.and(
+                        state -> moddedState.getFluidState().equals(state.getFluidState())
+                ));
+            } catch (BlockStateManager.StateLimitReachedException ignored) {}
+        }
+
         //=== BLOCKS WITH A FULL TOP SIDE ===
         if (Block.isFaceFullSquare(collisionShape, Direction.UP)) {
 
@@ -377,6 +396,54 @@ public class BlockPolyGenerator {
             PolyMc.LOGGER.error("Attempting to recover by using a default poly. Please report this");
             builder.registerBlockPoly(block, new SimpleReplacementPoly(Blocks.RED_STAINED_GLASS));
         }
+    }
+
+    /**
+     * Try getting the wall axis to use, if it's a wall-like block
+     *
+     * @param    shape   The collision shape
+     *
+     * @return   The collision axis, or null if it's not a wall-like block
+     */
+    public static Direction.Axis getWallAxis(VoxelShape shape, BlockState state) {
+
+        double max_y = shape.getMax(Direction.Axis.Y) * 16;
+
+        if (max_y < 14) {
+            return null;
+        }
+
+        double min_x = shape.getMin(Direction.Axis.X) * 16;
+        double max_x = shape.getMax(Direction.Axis.X) * 16;
+
+        double min_z = shape.getMin(Direction.Axis.Z) * 16;
+        double max_z = shape.getMax(Direction.Axis.Z) * 16;
+
+        double min_y = shape.getMin(Direction.Axis.Y) * 16;
+
+        double x_width = max_x - min_x;
+        double z_width = max_z - min_z;
+        double height = max_y - min_y;
+
+        Direction.Axis axis = null;
+        double width;
+        double depth;
+
+        if (x_width > z_width) {
+            width = x_width;
+            depth = z_width;
+            axis = Direction.Axis.X;
+        } else {
+            width = z_width;
+            depth = x_width;
+            axis = Direction.Axis.Z;
+        }
+
+        if (depth > 0 && width > 0 && depth < 6 && width > 6) {
+            return axis;
+        }
+
+        return null;
     }
 
     /**

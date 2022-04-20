@@ -26,6 +26,7 @@ import net.minecraft.block.*;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.block.enums.SculkSensorPhase;
 import net.minecraft.block.enums.SlabType;
+import net.minecraft.block.enums.WallShape;
 import net.minecraft.item.HoneycombItem;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.Direction;
@@ -86,6 +87,7 @@ public class BlockStateProfile {
     private static final Block[] SNOWY_GRASS_BLOCKS = {Blocks.MYCELIUM, Blocks.PODZOL}; // Snowy mycelium and podzol look the same as snowy grass
     private static final Block[] WATERLOGGED_SLABS = {Blocks.SMOOTH_STONE_SLAB}; // Smooth stone double slabs do not look like regular smooth stone blocks. Therefore, only the waterlogged double slab is available to us.
     private static final Block[] PRESSURE_PLATE_BLOCKS = {Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE, Blocks.HEAVY_WEIGHTED_PRESSURE_PLATE};
+    public static final Block[] WALL_BLOCKS = {Blocks.COBBLESTONE_WALL, Blocks.MOSSY_COBBLESTONE_WALL, Blocks.BRICK_WALL, Blocks.PRISMARINE_WALL, Blocks.RED_SANDSTONE_WALL, Blocks.MOSSY_STONE_BRICK_WALL, Blocks.GRANITE_WALL, Blocks.STONE_BRICK_WALL, Blocks.NETHER_BRICK_WALL, Blocks.ANDESITE_WALL, Blocks.RED_NETHER_BRICK_WALL, Blocks.SANDSTONE_WALL, Blocks.END_STONE_BRICK_WALL, Blocks.DIORITE_WALL, Blocks.BLACKSTONE_WALL, Blocks.POLISHED_BLACKSTONE_WALL, Blocks.COBBLED_DEEPSLATE_WALL, Blocks.POLISHED_DEEPSLATE_WALL, Blocks.DEEPSLATE_TILE_WALL, Blocks.DEEPSLATE_BRICK_WALL};
 
     //FILTERS
     private static final Predicate<BlockState> DEFAULT_FILTER = (blockState) -> blockState != blockState.getBlock().getDefaultState();
@@ -363,6 +365,208 @@ public class BlockStateProfile {
     };
 
     /**
+     * Get the none-lows-talls state counts
+     *
+     * @param   blockState
+     *
+     * @return
+     */
+    public static WallInfo getWallInfo(BlockState blockState) {
+
+        boolean up = blockState.get(Properties.UP);
+
+        // All the "up" states are in use
+        if (up) {
+            return new WallInfo(0, 0, 0, false, false, false, false);
+        }
+
+        WallShape east_shape = blockState.get(Properties.EAST_WALL_SHAPE);
+        WallShape north_shape = blockState.get(Properties.NORTH_WALL_SHAPE);
+        WallShape south_shape = blockState.get(Properties.SOUTH_WALL_SHAPE);
+        WallShape west_shape = blockState.get(Properties.WEST_WALL_SHAPE);
+
+        boolean east_low = east_shape == WallShape.LOW;
+        boolean north_low = north_shape == WallShape.LOW;
+        boolean south_low = south_shape == WallShape.LOW;
+        boolean west_low = west_shape == WallShape.LOW;
+
+        boolean east_tall = east_shape == WallShape.TALL;
+        boolean north_tall = north_shape == WallShape.TALL;
+        boolean south_tall = south_shape == WallShape.TALL;
+        boolean west_tall = west_shape == WallShape.TALL;
+
+        boolean east_none = east_shape == WallShape.NONE;
+        boolean north_none = north_shape == WallShape.NONE;
+        boolean south_none = south_shape == WallShape.NONE;
+        boolean west_none = west_shape == WallShape.NONE;
+
+        boolean east = east_low || east_tall;
+        boolean north = north_low || north_tall;
+        boolean south = south_low || south_tall;
+        boolean west = west_low || west_tall;
+
+        int lows = east_low ? 1 : 0;
+        lows += north_low ? 1 : 0;
+        lows += south_low ? 1 : 0;
+        lows += west_low ? 1 : 0;
+
+        int talls = east_tall ? 1 : 0;
+        talls += north_tall ? 1 : 0;
+        talls += south_tall ? 1 : 0;
+        talls += west_tall ? 1 : 0;
+
+        int none = east_none ? 1 : 0;
+        none += north_none ? 1 : 0;
+        none += south_none ? 1 : 0;
+        none += west_none ? 1 : 0;
+
+        return new WallInfo(none, lows, talls, east, north, south, west);
+    }
+
+    public static class WallInfo {
+
+        public final int none;
+        public final int lows;
+        public final int talls;
+        public final boolean east;
+        public final boolean north;
+        public final boolean south;
+        public final boolean west;
+        public final boolean useable;
+
+        public WallInfo(int none, int lows, int talls, boolean east, boolean north, boolean south, boolean west) {
+            this.none = none;
+            this.lows = lows;
+            this.talls = talls;
+            this.east = east;
+            this.north = north;
+            this.south = south;
+            this.west = west;
+
+            if (none == 3 && lows == 1) {
+                useable = true;
+            } else if (none == 2 && lows == 1 && talls == 1) {
+                useable = true;
+            } else if (none == 2 && lows == 0 && talls == 2) {
+                useable = false;
+            } else if (none == 1 && lows == 1 && talls == 2) {
+                useable = true;
+            } else if (none == 0 && lows == 2 && talls == 2) {
+                useable = true;
+            } else {
+                useable = false;
+            }
+        }
+
+        public boolean hasXWalls() {
+            return this.east || this.west;
+        }
+
+        public boolean hasZWalls() {
+            return this.north || this.south;
+        }
+
+        public Direction.Axis getAxis() {
+
+            boolean x_walls = this.hasXWalls();
+            boolean z_walls = this.hasZWalls();
+
+            if (!x_walls && !z_walls) {
+                return null;
+            }
+
+            if (this.none == 3) {
+                if (x_walls) {
+                    return Direction.Axis.X;
+                } else {
+                    return Direction.Axis.Z;
+                }
+            }
+
+            if (this.none == 2) {
+                if (x_walls && !z_walls) {
+                    return Direction.Axis.X;
+                }
+
+                if (!x_walls) {
+                    return Direction.Axis.Z;
+                }
+            }
+
+            return null;
+        }
+
+    }
+
+    /**
+     * Get availabe X axis states
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static final Predicate<BlockState> WALL_X_FILTER = (blockState) -> {
+
+        WallInfo info = getWallInfo(blockState);
+
+        if (!info.useable) {
+            return false;
+        }
+
+        Direction.Axis axis = info.getAxis();
+
+        if (axis == null) {
+            return false;
+        }
+
+        if (axis == Direction.Axis.X) {
+            // At least 2 sides are preferred, those are wider.
+            // @TODO: use less wide ones if they're the last options
+            return info.none == 2;
+        }
+
+        return false;
+    };
+
+    /**
+     * Get availabe Z axis states
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static final Predicate<BlockState> WALL_Z_FILTER = (blockState) -> {
+
+        WallInfo info = getWallInfo(blockState);
+
+        if (!info.useable) {
+            return false;
+        }
+
+        Direction.Axis axis = info.getAxis();
+
+        if (axis == null) {
+            return false;
+        }
+
+        if (axis == Direction.Axis.Z) {
+            // At least 2 sides are preferred, those are wider
+            // @TODO: use less wide ones if they're the last options
+            return info.none == 2;
+        }
+
+        return false;
+    };
+
+    /**
+     * Test available wall states
+     *
+     * @author   Jelle De Loecker   <jelle@elevenways.be>
+     */
+    private static final Predicate<BlockState> WALL_ANY_FILTER = (blockState) -> {
+
+        WallInfo info = getWallInfo(blockState);
+
+        return info.useable;
+    };
+
+    /**
      * Helper method to check if the given Direction is enabled on the given BlockState
      * (Used for mushroom blocks)
      *
@@ -437,6 +641,18 @@ public class BlockStateProfile {
         if (input.get(GrassBlock.SNOWY)) {
             return Blocks.GRASS_BLOCK.getDefaultState().with(GrassBlock.SNOWY, true);
         }
+        return input;
+    });
+
+
+    //private static final BiConsumer<Block,PolyRegistry> WALL_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(block, BROWN_MUSHROOM_FILTER));
+    private static final BiConsumer<Block,PolyRegistry> WALL_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, input -> {
+
+        // If the input state is one we use as a poly block, return the default state instead
+        if (WALL_ANY_FILTER.test(input)) {
+            return block.getDefaultState();
+        }
+
         return input;
     });
 
@@ -517,6 +733,9 @@ public class BlockStateProfile {
     public static final BlockStateProfile NOTE_BLOCK_PROFILE = getProfileWithDefaultFilter("note block", Blocks.NOTE_BLOCK);
     public static final BlockStateProfile CHORUS_PLANT_BLOCK_PROFILE = new BlockStateProfile("chorus plant block", Blocks.CHORUS_PLANT, CHORUS_PLANT_FILTER, CHORUS_PLANT_ON_FIRST_REGISTER);
     public static final BlockStateProfile CHORUS_FLOWER_BLOCK_PROFILE = new BlockStateProfile("chorus flower block", Blocks.CHORUS_FLOWER, CHORUS_FLOWER_FILTER, CHORUS_FLOWER_ON_FIRST_REGISTER);
+
+    public static final BlockStateProfile WALL_X_PROFILE = new BlockStateProfile("wall_x", WALL_BLOCKS, WALL_X_FILTER, WALL_ON_FIRST_REGISTER);
+    public static final BlockStateProfile WALL_Z_PROFILE = new BlockStateProfile("wall_z", WALL_BLOCKS, WALL_Z_FILTER, WALL_ON_FIRST_REGISTER);
 
     public static final BlockStateProfile FULL_BLOCK_PROFILE = combine("full blocks", INFESTED_STONE_SUB_PROFILE, /*TNT_SUB_PROFILE,*/ SNOWY_GRASS_SUB_PROFILE, NOTE_BLOCK_SUB_PROFILE, DISPENSER_SUB_PROFILE, BEEHIVE_SUB_PROFILE, WAXED_COPPER_FULLBLOCK_SUB_PROFILE, JUKEBOX_SUB_PROFILE, DOUBLE_SLAB_SUB_PROFILE, TARGET_BLOCK_SUB_PROFILE, WATERLOGGED_SLAB_SUB_PROFILE);
     public static final BlockStateProfile LEAVES_PROFILE = getProfileWithDefaultFilter("leaves", LEAVES_BLOCKS);
