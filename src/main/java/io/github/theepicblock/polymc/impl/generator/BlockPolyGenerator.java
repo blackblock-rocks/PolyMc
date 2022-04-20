@@ -39,6 +39,8 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 
+import java.lang.reflect.Method;
+
 /**
  * Class to automatically generate {@link BlockPoly}s for {@link Block}s
  */
@@ -170,6 +172,21 @@ public class BlockPolyGenerator {
             } catch (BlockStateManager.StateLimitReachedException ignored) {}
         }
 
+        Boolean is_translucent = callBlockMethod(moddedBlock, moddedState, "usesTranslucentRenderLayer");
+        Boolean is_cutout = callBlockMethod(moddedBlock, moddedState, "usesTranslucentRenderLayer");
+        Boolean is_cutout_mipped = callBlockMethod(moddedBlock, moddedState, "usesTranslucentRenderLayer");
+        Boolean is_solid = callBlockMethod(moddedBlock, moddedState, "usesTranslucentRenderLayer");
+        boolean found_render_info = false;
+
+        if (is_translucent != null || is_cutout != null || is_cutout_mipped != null || is_solid != null) {
+            found_render_info = true;
+        }
+
+        is_translucent = is_translucent != null && is_translucent;
+        is_cutout = is_cutout != null && is_cutout;
+        is_cutout_mipped = is_cutout_mipped != null && is_cutout_mipped;
+        is_solid = is_solid != null && is_solid;
+
         //=== FULL BLOCKS ===
         if (Block.isShapeFullCube(collisionShape)) {
 
@@ -221,9 +238,8 @@ public class BlockPolyGenerator {
             } catch (BlockStateManager.StateLimitReachedException ignored) {}
 
             // Portal block textures can be translucent
-            if (moddedBlock instanceof NetherPortalBlock) {
+            if (is_translucent || (!found_render_info && moddedBlock instanceof NetherPortalBlock)) {
                 try {
-
                     isUniqueCallback.set(true);
                     return manager.requestBlockState(BlockStateProfile.NO_COLLISION_TRANSLUCENT_PROFILE.and(
                             state -> moddedState.getFluidState().equals(state.getFluidState())
@@ -233,6 +249,16 @@ public class BlockPolyGenerator {
 
             // If it's a non-collision carpet, try to use a tripwire
             if (moddedBlock instanceof CarpetBlock) {
+
+                if (is_translucent) {
+                    try {
+                        isUniqueCallback.set(true);
+                        return manager.requestBlockState(BlockStateProfile.NO_COLLISION_TRANSLUCENT_PROFILE.and(
+                                state -> moddedState.getFluidState().equals(state.getFluidState())
+                        ));
+
+                    } catch (BlockStateManager.StateLimitReachedException ignored) {}
+                }
 
                 // Use pressure plates first
                 try {
@@ -252,7 +278,7 @@ public class BlockPolyGenerator {
                 } catch (BlockStateManager.StateLimitReachedException ignored) {}
             }
 
-            if (!moddedState.isOpaque()) {
+            if (is_translucent) {
                 try {
                     isUniqueCallback.set(true);
                     return manager.requestBlockState(BlockStateProfile.NO_COLLISION_TRANSLUCENT_PROFILE.and(
@@ -358,6 +384,18 @@ public class BlockPolyGenerator {
         //PolyMc can't handle this block. TODO implement more general polys to more of these cases
         isUniqueCallback.set(false);
         return Blocks.STONE.getDefaultState();
+    }
+
+    public static Boolean callBlockMethod(Block block, BlockState state, String methodName) {
+
+        Class<? extends Block> block_class = block.getClass();
+
+        try {
+            Method method = block_class.getDeclaredMethod(methodName, BlockState.class);
+            return (Boolean) method.invoke(block, state);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static boolean propertyMatches(BlockState a, BlockState b, Property<?>... properties) {
