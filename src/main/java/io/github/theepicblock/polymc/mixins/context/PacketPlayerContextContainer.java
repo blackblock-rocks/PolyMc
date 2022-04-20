@@ -19,6 +19,7 @@ package io.github.theepicblock.polymc.mixins.context;
 
 import io.github.theepicblock.polymc.impl.mixin.PlayerContextContainer;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket;
 import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -36,7 +37,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
         ParticleS2CPacket.class,
         SynchronizeTagsS2CPacket.class,
         EntitySpawnS2CPacket.class,
-        SynchronizeTagsS2CPacket.class})
+        SynchronizeTagsS2CPacket.class,
+        CreativeInventoryActionC2SPacket.class
+})
 public class PacketPlayerContextContainer implements PlayerContextContainer {
     @Unique
     private ServerPlayerEntity player;

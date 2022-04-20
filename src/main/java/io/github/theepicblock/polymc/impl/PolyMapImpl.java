@@ -48,7 +48,9 @@ import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
+import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.FileWriter;
@@ -144,9 +146,25 @@ public class PolyMapImpl implements PolyMap {
             return input;
         }
 
+
         NbtCompound tag = input.getNbt().getCompound(ORIGINAL_ITEM_NBT);
         ItemStack stack = ItemStack.fromNbt(tag);
-        stack.setCount(input.getCount()); // The clientside count is leading, to support middle mouse button duplication and stack splitting and such
+
+        // It's possible the block id was returned instead of the item id,
+        // try to solve that
+        if (stack.isEmpty()) {
+            try {
+                String id = tag.getString("id");
+                Block block = Registry.BLOCK.get(Identifier.tryParse(id));
+                stack = block.getPickStack(null, null, null);
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+
+        // The clientside count is leading, to support middle mouse button duplication and stack splitting and such
+        int count = input.getCount();
+        stack.setCount(count);
 
         if (stack.isEmpty() && !input.isEmpty()) {
             stack = new ItemStack(Items.CLAY_BALL);
