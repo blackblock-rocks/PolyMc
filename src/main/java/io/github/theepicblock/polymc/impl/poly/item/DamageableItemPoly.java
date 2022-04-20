@@ -25,24 +25,25 @@ import net.minecraft.item.Items;
 import org.jetbrains.annotations.Nullable;
 
 public class DamageableItemPoly extends CustomModelDataPoly {
-    private final int clientSideMaxDamage;
-    private final int serverSideMaxDamage;
+    private static final Item[] GENERIC_DAMAGEABLE = new Item[]{Items.WOODEN_PICKAXE, Items.STONE_PICKAXE};
 
     public DamageableItemPoly(CustomModelDataManager registerManager, Item base) {
-        this(registerManager, base, Items.WARPED_FUNGUS_ON_A_STICK);
+        this(registerManager, base, GENERIC_DAMAGEABLE);
     }
 
     public DamageableItemPoly(CustomModelDataManager registerManager, Item base, Item target) {
-        super(registerManager, base, target);
-        clientSideMaxDamage = target.getMaxDamage();
-        serverSideMaxDamage = base.getMaxDamage();
+        this(registerManager, base, new Item[]{target});
+    }
+
+    public DamageableItemPoly(CustomModelDataManager registerManager, Item base, Item[] targets) {
+        super(registerManager, base, targets);
     }
 
     @Override
     public ItemStack getClientItem(ItemStack input, @Nullable ItemLocation location) {
         ItemStack sup = super.getClientItem(input, location);
         int inputDamage = input.getDamage();
-        int damage = (int)(((float)inputDamage / serverSideMaxDamage) * clientSideMaxDamage); //convert serverside damage to clientside damage
+        int damage = (int)(((float)inputDamage / base.getMaxDamage()) * input.getMaxDamage()); //convert serverside damage to clientside damage
         if (damage == 0 && inputDamage > 0) damage = 1; //If the item is damaged in any way it should show up
         sup.setDamage(damage);
 
