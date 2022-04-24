@@ -1,11 +1,13 @@
 package io.github.theepicblock.polymc.api.resource;
 
 import com.google.gson.Gson;
+import io.github.theepicblock.polymc.PolyMc;
 import io.github.theepicblock.polymc.api.resource.json.JBlockState;
 import io.github.theepicblock.polymc.api.resource.json.JModel;
 import io.github.theepicblock.polymc.api.resource.json.JSoundEventRegistry;
 import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.misc.logging.SimpleLogger;
+import io.github.theepicblock.polymc.impl.resource.ModdedResourceContainerImpl;
 import io.github.theepicblock.polymc.impl.resource.ResourceConstants;
 import io.github.theepicblock.polymc.impl.resource.json.JBlockStateWrapper;
 import io.github.theepicblock.polymc.impl.resource.json.JModelImpl;
@@ -102,25 +104,24 @@ public interface PolyMcResourcePack {
 
     default JModel getOrDefaultVanillaItemModel(String namespace, String model) {
         if (this.getItemModel(namespace, model) == null) {
-            if (Objects.equals(model, "shield")) {
-                var newModel = Util.GSON.fromJson("{\"parent\":\"builtin/entity\",\"gui_light\":\"front\",\"textures\":{\"particle\":\"block/dark_oak_planks\"},\"display\":{\"thirdperson_righthand\":{\"rotation\":[0,90,0],\"translation\":[10,6,-4],\"scale\":[1,1,1]},\"thirdperson_lefthand\":{\"rotation\":[0,90,0],\"translation\":[10,6,12],\"scale\":[1,1,1]},\"firstperson_righthand\":{\"rotation\":[0,180,5],\"translation\":[-10,2,-10],\"scale\":[1.25,1.25,1.25]},\"firstperson_lefthand\":{\"rotation\":[0,180,5],\"translation\":[10,0,-10],\"scale\":[1.25,1.25,1.25]},\"gui\":{\"rotation\":[15,-25,-5],\"translation\":[2,3,0],\"scale\":[0.65,0.65,0.65]},\"fixed\":{\"rotation\":[0,180,0],\"translation\":[-2,4,-5],\"scale\":[0.5,0.5,0.5]},\"ground\":{\"rotation\":[0,0,0],\"translation\":[4,4,2],\"scale\":[0.25,0.25,0.25]}},\"overrides\":[{\"predicate\":{\"blocking\":1},\"model\":\"item/shield_blocking\"}]}", JModelImpl.class);
-                this.setItemModel(namespace, model, new JModelWrapper(newModel));
-            } else if (Objects.equals(model, "bow")) {
-                var newModel = Util.GSON.fromJson("{\"parent\":\"item/generated\",\"textures\":{\"layer0\":\"item/bow\"},\"display\":{\"thirdperson_righthand\":{\"rotation\":[-80,260,-40],\"translation\":[-1,-2,2.5],\"scale\":[0.9,0.9,0.9]},\"thirdperson_lefthand\":{\"rotation\":[-80,-280,40],\"translation\":[-1,-2,2.5],\"scale\":[0.9,0.9,0.9]},\"firstperson_righthand\":{\"rotation\":[0,-90,25],\"translation\":[1.13,3.2,1.13],\"scale\":[0.68,0.68,0.68]},\"firstperson_lefthand\":{\"rotation\":[0,90,-25],\"translation\":[1.13,3.2,1.13],\"scale\":[0.68,0.68,0.68]}},\"overrides\":[{\"predicate\":{\"pulling\":1},\"model\":\"item/bow_pulling_0\"},{\"predicate\":{\"pulling\":1,\"pull\":0.65},\"model\":\"item/bow_pulling_1\"},{\"predicate\":{\"pulling\":1,\"pull\":0.9},\"model\":\"item/bow_pulling_2\"}]}", JModelImpl.class);
-                this.setItemModel(namespace, model, new JModelWrapper(newModel));
-            } else {
-                var newModel = new JModelWrapper();
-                newModel.setParent("item/generated");
-                if (Objects.equals(model, "stick")) {
-                    newModel.setParent("item/handheld");
-                }
-                newModel.getTextures().put("layer0", "item/"+model);
+            var moddedResources = new ModdedResourceContainerImpl();
+            ModdedResources mergedResources = moddedResources.includeClientJar(PolyMc.LOGGER);
 
-                if (ArrayUtils.contains(new String[]{"leather_helmet", "leather_chestplate", "leather_leggings", "leather_boots"}, model)) {
-                    newModel.getTextures().put("layer1", "item/"+model+"_overlay");
-                }
+            JModel clientModel = mergedResources.getItemModel(namespace, model);
+            JModelWrapper newModel = new JModelWrapper(clientModel);
 
-                this.setItemModel(namespace, model, newModel);
+            if (ArrayUtils.contains(new String[]{"leather_helmet", "leather_chestplate", "leather_leggings", "leather_boots"}, model)) {
+                newModel.getTextures().put("layer1", "item/"+model+"_overlay");
+            }
+
+            this.setItemModel(namespace, model, newModel);
+
+            try {
+                moddedResources.close();
+                mergedResources.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+                PolyMc.LOGGER.error("Failed to close modded resources");
             }
         }
         return this.getItemModel(namespace, model);
