@@ -111,8 +111,14 @@ public class PolyMapImpl implements PolyMap {
 
         if ((player == null || player.isCreative()) && !ItemStack.canCombine(serverItem, ret) && !serverItem.isEmpty()) {
             // Preserves the nbt of the original item so it can be reverted
+            try {
             ret = ret.copy();
             ret.setSubNbt(ORIGINAL_ITEM_NBT, originalNbt);
+            } catch (Exception e) {
+                PolyMc.LOGGER.error("Failed to preserve original item nbt for " + player + ": " + e.getMessage());
+                e.printStackTrace();
+                PolyMc.LOGGER.info(" -- Server ItemStack was: " + serverItem);
+            }
         }
 
         return ret;
