@@ -29,6 +29,24 @@ public class JModelWrapper implements JModel {
         this.jsonRepresentation = new JModelImpl();
     }
 
+    public JModelWrapper(JModel clientModel) {
+        this();
+        this.setParent(clientModel.getParent());
+        this.setGuiLight(clientModel.getGuiLight());
+        jsonRepresentation.textures = clientModel.getTextures();
+        jsonRepresentation.elements = clientModel.getElements();
+
+        for (JModelDisplayType displayType : JModelDisplayType.values()) {
+            JModelDisplay display = clientModel.getDisplay(displayType);
+
+            if (display != null) {
+                this.setDisplay(displayType, display);
+            }
+        }
+
+        jsonRepresentation.overrides = clientModel.getOverrides();
+    }
+
     public JModelWrapper(JModelImpl jsonRepresentation) {
         this.jsonRepresentation = jsonRepresentation;
     }
