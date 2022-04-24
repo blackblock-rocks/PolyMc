@@ -238,6 +238,9 @@ public class PolyMapImpl implements PolyMap {
         for (var lang : moddedResources.locateLanguageFiles()) {
             // Ignore fapi
             if (lang.getNamespace().equals("fabric")) continue;
+            if (!lang.getPath().contains("en_us")) {
+                continue;
+            }
             for (var stream : moddedResources.getInputStreams(lang.getNamespace(), lang.getPath())) {
                 try {
                     // Copy all of the language keys into the main map
