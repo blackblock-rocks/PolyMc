@@ -14,14 +14,15 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class ResourcePackImplementation implements PolyMcResourcePack {
-    private final Map<String, Map<String, PolyMcAsset>> assets = new HashMap<>();
+    private final Map<String, Map<String, PolyMcAsset>> assets = new TreeMap<>();
     private final Gson gson = new GsonBuilder().enableComplexMapKeySerialization().disableHtmlEscaping().create();
 
     @Override
     public void setAsset(String namespace, String path, PolyMcAsset asset) {
-        var perNamespaceMap = assets.computeIfAbsent(namespace, (v) -> new HashMap<>());
+        var perNamespaceMap = assets.computeIfAbsent(namespace, (v) -> new TreeMap<>());
         perNamespaceMap.put(path, asset);
     }
 

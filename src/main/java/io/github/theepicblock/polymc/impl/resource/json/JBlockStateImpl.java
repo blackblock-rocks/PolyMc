@@ -5,6 +5,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class JBlockStateImpl {
     /**
@@ -13,5 +14,5 @@ public class JBlockStateImpl {
     @SerializedName(value = "credit", alternate = "__comment")
     private String credit;
 
-    public final Map<String, JsonElement> variants = new HashMap<>();
+    public final Map<String, JsonElement> variants = new TreeMap<>();
 }

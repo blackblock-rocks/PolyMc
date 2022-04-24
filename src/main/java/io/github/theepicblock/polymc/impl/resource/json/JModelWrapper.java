@@ -90,7 +90,7 @@ public class JModelWrapper implements JModel {
     public @NotNull Map<String,String> getTextures() {
         assertJson();
         if (jsonRepresentation.textures == null) {
-            jsonRepresentation.textures = new HashMap<>();
+            jsonRepresentation.textures = new TreeMap<>();
         }
         return jsonRepresentation.textures;
     }
@@ -117,7 +117,7 @@ public class JModelWrapper implements JModel {
     public void setDisplay(JModelDisplayType position, JModelDisplay display) {
         assertJson();
         if (jsonRepresentation.display == null) {
-            jsonRepresentation.display = new HashMap<>();
+            jsonRepresentation.display = new TreeMap<>();
         }
         jsonRepresentation.display.put(position, display);
     }
