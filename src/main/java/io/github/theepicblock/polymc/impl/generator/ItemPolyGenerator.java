@@ -63,7 +63,7 @@ public class ItemPolyGenerator {
         }
 
         if (item instanceof PotionItem){
-            return new CustomModelDataPoly(cmdManager, item, CustomModelDataManager.FOOD_ITEMS);
+            return new CustomModelDataPoly(cmdManager, item, Items.MILK_BUCKET);
         }
 
         if (item.isFood()) {
