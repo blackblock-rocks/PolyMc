@@ -99,29 +99,38 @@ public class PolyMapImpl implements PolyMap {
 
     @Override
     public ItemStack getClientItem(ItemStack serverItem, @Nullable ServerPlayerEntity player, @Nullable ItemLocation location) {
-        ItemStack ret = serverItem;
+        ItemStack clientItemStack = serverItem;
         NbtCompound originalNbt = serverItem.writeNbt(new NbtCompound());
 
         ItemPoly poly = itemPolys.get(serverItem.getItem());
-        if (poly != null) ret = poly.getClientItem(serverItem, player, location);
 
-        for (ItemTransformer globalPoly : globalItemPolys) {
-            ret = globalPoly.transform(ret, player, location);
+        if (poly != null) {
+            clientItemStack = poly.getClientItem(serverItem, player, location);
         }
 
-        if ((player == null || player.isCreative()) && !ItemStack.canCombine(serverItem, ret) && !serverItem.isEmpty()) {
+        for (ItemTransformer globalPoly : globalItemPolys) {
+            clientItemStack = globalPoly.transform(clientItemStack, player, location);
+        }
+
+        ItemStack result = clientItemStack;
+
+        if ((player == null || player.isCreative()) && !ItemStack.canCombine(serverItem, result) && !serverItem.isEmpty()) {
             // Preserves the nbt of the original item so it can be reverted
             try {
-            ret = ret.copy();
-            ret.setSubNbt(ORIGINAL_ITEM_NBT, originalNbt);
+                result = clientItemStack.copy();
+                result.setSubNbt(ORIGINAL_ITEM_NBT, originalNbt);
             } catch (Exception e) {
                 PolyMc.LOGGER.error("Failed to preserve original item nbt for " + player + ": " + e.getMessage());
                 e.printStackTrace();
                 PolyMc.LOGGER.info(" -- Server ItemStack was: " + serverItem);
+                PolyMc.LOGGER.info(" -- NBT was: " + serverItem.getNbt());
+
+                result = new ItemStack(clientItemStack.getItem());
+                result.setSubNbt(ORIGINAL_ITEM_NBT, originalNbt);
             }
         }
 
-        return ret;
+        return result;
     }
 
     @Override
