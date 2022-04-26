@@ -20,8 +20,11 @@ package io.github.theepicblock.polymc.impl.poly.block;
 import com.google.common.collect.ImmutableMap;
 import io.github.theepicblock.polymc.api.block.BlockPoly;
 import io.github.theepicblock.polymc.api.block.BlockStateMerger;
+import io.github.theepicblock.polymc.api.block.PolyWizardProvider;
 import io.github.theepicblock.polymc.api.resource.ModdedResources;
 import io.github.theepicblock.polymc.api.resource.PolyMcResourcePack;
+import io.github.theepicblock.polymc.api.wizard.Wizard;
+import io.github.theepicblock.polymc.api.wizard.WizardInfo;
 import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.misc.BooleanContainer;
 import io.github.theepicblock.polymc.impl.misc.logging.SimpleLogger;
@@ -40,6 +43,8 @@ import java.util.function.BiFunction;
 public class FunctionBlockStatePoly implements BlockPoly {
     private final ImmutableMap<BlockState,BlockState> states;
     private final ArrayList<BlockState> uniqueClientBlocks = new ArrayList<>();
+    private final Block moddedBlock;
+    private final PolyWizardProvider wizardProvider;
 
     public FunctionBlockStatePoly(Block moddedBlock, BiFunction<BlockState, BooleanContainer, BlockState> registrationProvider) {
         this(moddedBlock, registrationProvider, BlockStateMerger.DEFAULT);
@@ -55,6 +60,14 @@ public class FunctionBlockStatePoly implements BlockPoly {
          * @param merger function to use to merge block states which use the same model on the client
          */
     public FunctionBlockStatePoly(Block moddedBlock, BiFunction<BlockState, BooleanContainer, BlockState> registrationProvider, BlockStateMerger merger) {
+        this.moddedBlock = moddedBlock;
+
+        if (this.moddedBlock instanceof PolyWizardProvider polyWizardProvider) {
+            this.wizardProvider = polyWizardProvider;
+        } else {
+            this.wizardProvider = null;
+        }
+
         var moddedStateGroups = new ArrayList<BlockStateGroup>();
         var states = new HashMap<BlockState, BlockState>();
 
@@ -135,5 +148,25 @@ public class FunctionBlockStatePoly implements BlockPoly {
             }
         });
         return out.toString();
+    }
+
+    @Override
+    public Wizard createWizard(WizardInfo info) {
+
+        if (this.wizardProvider != null) {
+            return this.wizardProvider.createPolyWizard(info);
+        }
+
+        return null;
+    }
+
+    @Override
+    public boolean hasWizard() {
+
+        if (this.wizardProvider != null) {
+            return this.wizardProvider.hasPolyWizard();
+        }
+
+        return false;
     }
 }
