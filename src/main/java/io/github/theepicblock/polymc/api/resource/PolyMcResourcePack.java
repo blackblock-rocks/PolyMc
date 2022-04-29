@@ -33,9 +33,7 @@ public interface PolyMcResourcePack {
         }
     }
 
-    default void importRequirements(ModdedResources input, AssetWithDependencies asset, SimpleLogger logger) {
-        asset.importRequirements(input, this, logger);
-    }
+    void importRequirements(ModdedResources input, AssetWithDependencies asset, SimpleLogger logger);
 
     default void setTexture(String namespace, String path, TextureAsset texture) {
         setAsset(namespace, ResourceConstants.texture(path), texture);

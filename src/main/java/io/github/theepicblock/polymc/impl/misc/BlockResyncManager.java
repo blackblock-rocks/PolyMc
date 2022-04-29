@@ -20,6 +20,7 @@ package io.github.theepicblock.polymc.impl.misc;
 import io.github.theepicblock.polymc.api.block.BlockPoly;
 import io.github.theepicblock.polymc.api.block.BlockStateProfile;
 import io.github.theepicblock.polymc.api.misc.PolyMapProvider;
+import io.github.theepicblock.polymc.impl.Util;
 import net.minecraft.block.*;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
@@ -29,7 +30,6 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -118,8 +118,7 @@ public class BlockResyncManager {
             }
 
             BlockState state = world.getBlockState(pos);
-
-            BlockPoly poly = PolyMapProvider.getPolyMap(player).getBlockPoly(state.getBlock());
+            BlockPoly poly = Util.tryGetPolyMap(player).getBlockPoly(state.getBlock());
 
             if (poly != null) {
                 BlockState clientState = poly.getClientBlock(state);
