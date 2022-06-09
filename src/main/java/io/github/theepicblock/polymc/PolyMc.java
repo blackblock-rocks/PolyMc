@@ -22,20 +22,21 @@ import io.github.theepicblock.polymc.api.PolyMap;
 import io.github.theepicblock.polymc.api.PolyMcEntrypoint;
 import io.github.theepicblock.polymc.api.PolyRegistry;
 import io.github.theepicblock.polymc.api.misc.PolyMapProvider;
-import io.github.theepicblock.polymc.api.wizard.Wizard;
 import io.github.theepicblock.polymc.impl.ConfigManager;
 import io.github.theepicblock.polymc.impl.PolyMcCommands;
 import io.github.theepicblock.polymc.impl.generator.Generator;
 import io.github.theepicblock.polymc.impl.misc.BlockIdRemapper;
 import io.github.theepicblock.polymc.impl.misc.logging.Log4JWrapper;
 import io.github.theepicblock.polymc.impl.misc.logging.SimpleLogger;
-import io.github.theepicblock.polymc.impl.mixin.WizardTickerDuck;
+import io.github.theepicblock.polymc.impl.poly.wizard.PacketCountManager;
+import io.github.theepicblock.polymc.impl.poly.wizard.RegularWizardUpdater;
+import io.github.theepicblock.polymc.impl.poly.wizard.ThreadedWizardUpdater;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
 
@@ -80,6 +81,17 @@ public class PolyMc implements ModInitializer {
      */
     @Deprecated
     public static PolyMap getMainMap() {
+        return getGeneratedMap();
+    }
+
+    @Deprecated
+    public static PolyMap getMapForResourceGen() {
+        return getGeneratedMap();
+    }
+
+    @Deprecated
+    @ApiStatus.Internal
+    public static PolyMap getGeneratedMap() {
         if (map == null) {
             throw new NullPointerException("Tried to access the PolyMap before it was initialized");
         }
@@ -103,6 +115,12 @@ public class PolyMc implements ModInitializer {
             LOGGER.warn("PolyMc detected immersive portals. Keep in mind that the compat with IP is really quite janky. You're on your own");
         }
 
-        ServerTickEvents.END_WORLD_TICK.register(server -> ((WizardTickerDuck)server).polymc$getTickers().forEach(Wizard::onTick));
+        if (ConfigManager.getConfig().enableWizardThreading) {
+            ThreadedWizardUpdater.registerEvents();
+        } else {
+            RegularWizardUpdater.registerEvents();
+        }
+
+        PacketCountManager.registerEvents();
     }
 }

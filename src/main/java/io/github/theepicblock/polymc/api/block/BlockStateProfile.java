@@ -87,7 +87,7 @@ public class BlockStateProfile {
     private static final Block[] SNOWY_GRASS_BLOCKS = {Blocks.MYCELIUM, Blocks.PODZOL}; // Snowy mycelium and podzol look the same as snowy grass
     private static final Block[] WATERLOGGED_SLABS = {Blocks.SMOOTH_STONE_SLAB}; // Smooth stone double slabs do not look like regular smooth stone blocks. Therefore, only the waterlogged double slab is available to us.
     private static final Block[] PRESSURE_PLATE_BLOCKS = {Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE, Blocks.HEAVY_WEIGHTED_PRESSURE_PLATE};
-    public static final Block[] WALL_BLOCKS = {Blocks.COBBLESTONE_WALL, Blocks.MOSSY_COBBLESTONE_WALL, Blocks.BRICK_WALL, Blocks.PRISMARINE_WALL, Blocks.RED_SANDSTONE_WALL, Blocks.MOSSY_STONE_BRICK_WALL, Blocks.GRANITE_WALL, Blocks.STONE_BRICK_WALL, Blocks.NETHER_BRICK_WALL, Blocks.ANDESITE_WALL, Blocks.RED_NETHER_BRICK_WALL, Blocks.SANDSTONE_WALL, Blocks.END_STONE_BRICK_WALL, Blocks.DIORITE_WALL, Blocks.BLACKSTONE_WALL, Blocks.POLISHED_BLACKSTONE_WALL, Blocks.COBBLED_DEEPSLATE_WALL, Blocks.POLISHED_DEEPSLATE_WALL, Blocks.DEEPSLATE_TILE_WALL, Blocks.DEEPSLATE_BRICK_WALL};
+    public static final Block[] WALL_BLOCKS = {Blocks.COBBLESTONE_WALL, Blocks.MOSSY_COBBLESTONE_WALL, Blocks.BRICK_WALL, Blocks.PRISMARINE_WALL, Blocks.RED_SANDSTONE_WALL, Blocks.MOSSY_STONE_BRICK_WALL, Blocks.GRANITE_WALL, Blocks.STONE_BRICK_WALL, Blocks.NETHER_BRICK_WALL, Blocks.ANDESITE_WALL, Blocks.RED_NETHER_BRICK_WALL, Blocks.SANDSTONE_WALL, Blocks.END_STONE_BRICK_WALL, Blocks.DIORITE_WALL, Blocks.BLACKSTONE_WALL, Blocks.POLISHED_BLACKSTONE_BRICK_WALL, Blocks.POLISHED_BLACKSTONE_WALL, Blocks.COBBLED_DEEPSLATE_WALL, Blocks.POLISHED_DEEPSLATE_WALL, Blocks.DEEPSLATE_TILE_WALL, Blocks.DEEPSLATE_BRICK_WALL};
 
     //FILTERS
     private static final Predicate<BlockState> DEFAULT_FILTER = (blockState) -> blockState != blockState.getBlock().getDefaultState();
@@ -116,6 +116,12 @@ public class BlockStateProfile {
         return DEFAULT_FILTER.test(blockState);
     };
     private static final Predicate<BlockState> ALWAYS_TRUE_FILTER = (blockState) -> true;
+    private static final Predicate<BlockState> WALL_FILTER = (blockState) ->
+            blockState.get(WallBlock.NORTH_SHAPE) == WallShape.NONE &&
+            blockState.get(WallBlock.WEST_SHAPE) == WallShape.NONE &&
+            blockState.get(WallBlock.EAST_SHAPE) == WallShape.NONE &&
+            blockState.get(WallBlock.SOUTH_SHAPE) == WallShape.NONE &&
+            blockState.get(WallBlock.UP) == false;
     private static final Predicate<BlockState> TRIPWIRE_FILTER = BlockStateProfile::isStringUseable;
     private static final Predicate<BlockState> TRIPWIRE_THIN_FILTER = BlockStateProfile::isThinTripwireUsable;
     private static final Predicate<BlockState> TRIPWIRE_THICK_FILTER = BlockStateProfile::isThickTripwireUsable;
@@ -589,6 +595,14 @@ public class BlockStateProfile {
 
     //ON FIRST REGISTERS
     private static final BiConsumer<Block,PolyRegistry> DEFAULT_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new SimpleReplacementPoly(block.getDefaultState()));
+    private static final BiConsumer<Block,PolyRegistry> WALL_ON_FIRST_REGISTER = (block, polyRegistry) -> {
+        polyRegistry.registerBlockPoly(block, input -> {
+            if (WALL_FILTER.test(input)) {
+                return input.getBlock().getDefaultState();
+            }
+            return input;
+        });
+    };
     private static final BiConsumer<Block,PolyRegistry> TRIPWIRE_ON_FIRST_REGISTER = (block, polyRegistry) -> {
         polyRegistry.registerBlockPoly(block, (input) ->
                 input.with(Properties.POWERED, false).with(Properties.DISARMED,false)
@@ -644,18 +658,6 @@ public class BlockStateProfile {
         return input;
     });
 
-
-    //private static final BiConsumer<Block,PolyRegistry> WALL_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(block, BROWN_MUSHROOM_FILTER));
-    private static final BiConsumer<Block,PolyRegistry> WALL_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, input -> {
-
-        // If the input state is one we use as a poly block, return the default state instead
-        if (WALL_ANY_FILTER.test(input)) {
-            return block.getDefaultState();
-        }
-
-        return input;
-    });
-
     private static final BiConsumer<Block,PolyRegistry> BROWN_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.BROWN_MUSHROOM_BLOCK.getDefaultState(), BROWN_MUSHROOM_FILTER));
     private static final BiConsumer<Block,PolyRegistry> RED_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.RED_MUSHROOM_BLOCK.getDefaultState(), RED_MUSHROOM_FILTER));
     private static final BiConsumer<Block,PolyRegistry> STEM_MUSHROOM_ON_FIRST_REGISTER = (block, polyRegistry) -> polyRegistry.registerBlockPoly(block, new ConditionalSimpleBlockPoly(Blocks.MUSHROOM_STEM.getDefaultState(), STEM_MUSHROOM_FILTER));
@@ -704,6 +706,7 @@ public class BlockStateProfile {
     public static final BlockStateProfile SAPLING_SUB_PROFILE = getProfileWithDefaultFilter("sapling", SAPLING_BLOCKS);
     public static final BlockStateProfile TRIPWIRE_THIN_PROFILE = new BlockStateProfile("thin tripwire", Blocks.TRIPWIRE, TRIPWIRE_THIN_FILTER, TRIPWIRE_ON_FIRST_REGISTER);
     public static final BlockStateProfile TRIPWIRE_THICK_PROFILE = new BlockStateProfile("thick tripwire", Blocks.TRIPWIRE, TRIPWIRE_THICK_FILTER, TRIPWIRE_ON_FIRST_REGISTER);
+    public static final BlockStateProfile SUGARCANE_SUB_PROFILE = getProfileWithDefaultFilter("sugarcane", Blocks.SUGAR_CANE);
     public static final BlockStateProfile TRIPWIRE_SUB_PROFILE = new BlockStateProfile("tripwire", Blocks.TRIPWIRE, TRIPWIRE_FILTER, TRIPWIRE_ON_FIRST_REGISTER);
     public static final BlockStateProfile SMALL_DRIPLEAF_SUB_PROFILE = new BlockStateProfile("drip leaf", Blocks.SMALL_DRIPLEAF, SMALL_DRIPLEAF_FILTER, SMALL_DRIPLEAF_ON_FIRST_REGISTER);
     //public static final BlockStateProfile CAVE_VINES_SUB_PROFILE = new BlockStateProfile("cave vines", Blocks.CAVE_VINES, CAVE_VINES_FILTER, CAVE_VINES_ON_FIRST_REGISTER);
@@ -750,6 +753,8 @@ public class BlockStateProfile {
 
     //public static final BlockStateProfile PETRIFIED_OAK_SLAB_PROFILE = new BlockStateProfile("petrified oak slab", Blocks.PETRIFIED_OAK_SLAB, ALWAYS_TRUE_FILTER, PETRIFIED_OAK_SLAB_ON_FIRST_REGISTER);
 
+    public static final BlockStateProfile NO_COLLISION_WALL_PROFILE = new BlockStateProfile("empty walls", WALL_BLOCKS, WALL_FILTER, WALL_ON_FIRST_REGISTER);
+    public static final BlockStateProfile NO_COLLISION_PROFILE = combine("blocks without collisions", KELP_SUB_PROFILE, SAPLING_SUB_PROFILE, SUGARCANE_SUB_PROFILE, /*CAVE_VINES_SUB_PROFILE,*/ TRIPWIRE_SUB_PROFILE, SMALL_DRIPLEAF_SUB_PROFILE, OPEN_FENCE_GATE_PROFILE);
     public static final BlockStateProfile FARMLAND_PROFILE = new BlockStateProfile("farmland", Blocks.FARMLAND, FARMLAND_FILTER, FARMLAND_ON_FIRST_REGISTER);
     public static final BlockStateProfile CACTUS_PROFILE = getProfileWithDefaultFilter("cactus", Blocks.CACTUS);
     public static final BlockStateProfile DOOR_PROFILE = new BlockStateProfile("door", DOOR_BLOCKS, POWERED_FILTER, POWERED_BLOCK_ON_FIRST_REGISTER);

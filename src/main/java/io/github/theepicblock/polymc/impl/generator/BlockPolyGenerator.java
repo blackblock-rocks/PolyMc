@@ -230,7 +230,17 @@ public class BlockPolyGenerator {
         }
 
         //=== NO COLLISION BLOCKS ===
-        if (collisionShape.isEmpty()) {
+        if (collisionShape.isEmpty() && !(moddedState.getBlock() instanceof WallBlock)) {
+            var outlineShape = moddedState.getOutlineShape(fakeWorld, BlockPos.ORIGIN);
+
+            if (outlineShape.isEmpty()) {
+                try {
+                    isUniqueCallback.set(true);
+                    return manager.requestBlockState(BlockStateProfile.NO_COLLISION_WALL_PROFILE.and(
+                            state -> moddedState.getFluidState().equals(state.getFluidState())
+                    ));
+                } catch (BlockStateManager.StateLimitReachedException ignored) {}
+            }
             try {
                 if (moddedState.isIn(BlockTags.CLIMBABLE)) {
                     isUniqueCallback.set(true);

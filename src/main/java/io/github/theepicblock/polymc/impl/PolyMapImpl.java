@@ -19,6 +19,7 @@ package io.github.theepicblock.polymc.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import io.github.theepicblock.polymc.PolyMc;
@@ -35,6 +36,7 @@ import io.github.theepicblock.polymc.api.item.ItemTransformer;
 import io.github.theepicblock.polymc.api.resource.PolyMcResourcePack;
 import io.github.theepicblock.polymc.impl.misc.logging.SimpleLogger;
 import io.github.theepicblock.polymc.impl.resource.ModdedResourceContainerImpl;
+import io.github.theepicblock.polymc.impl.resource.PolyMcAssetBase;
 import io.github.theepicblock.polymc.impl.resource.ResourcePackImplementation;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.fabricmc.loader.api.FabricLoader;
@@ -54,8 +56,10 @@ import net.minecraft.util.JsonHelper;
 import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -205,6 +209,8 @@ public class PolyMapImpl implements PolyMap {
         var moddedResources = new ModdedResourceContainerImpl();
         var pack = new ResourcePackImplementation();
 
+        PolyMc.LOGGER.info("Using: "+moddedResources);
+
         //Let mods register resources via the api
         List<PolyMcEntrypoint> entrypoints = FabricLoader.getInstance().getEntrypoints("polymc", PolyMcEntrypoint.class);
         for (PolyMcEntrypoint entrypointEntry : entrypoints) {
@@ -251,12 +257,12 @@ public class PolyMapImpl implements PolyMap {
                 continue;
             }
             for (var stream : moddedResources.getInputStreams(lang.getNamespace(), lang.getPath())) {
-                try {
+                try (var streamReader = new InputStreamReader(stream, StandardCharsets.UTF_8)){
                     // Copy all of the language keys into the main map
-                    var languageObject = pack.getGson().fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), JsonObject.class);
+                    var languageObject = pack.getGson().fromJson(streamReader, JsonObject.class);
                     var mainLangMap = languageKeys.computeIfAbsent(lang.getPath(), (key) -> new TreeMap<>());
                     languageObject.entrySet().forEach(entry -> mainLangMap.put(entry.getKey(), JsonHelper.asString(entry.getValue(), entry.getKey())));
-                } catch (JsonParseException e) {
+                } catch (JsonParseException | IOException e) {
                     logger.error("Couldn't parse lang file "+lang);
                     e.printStackTrace();
                 }
@@ -264,9 +270,12 @@ public class PolyMapImpl implements PolyMap {
         }
         // It doesn't actually matter which namespace the language files are under. We're just going to put them all under 'polymc-lang'
         languageKeys.forEach((path, translations) -> {
-            pack.setAsset("polymc-lang", path, (location, gson) -> {
-                try (var writer = new FileWriter(location.toFile(), StandardCharsets.UTF_8)) {
-                    gson.toJson(translations, writer);
+            pack.setAsset("polymc-lang", path, new PolyMcAssetBase() {
+                @Override
+                public void writeToStream(OutputStream stream, Gson gson) throws IOException {
+                    try (var writer = new OutputStreamWriter(stream)) {
+                        gson.toJson(translations, writer);
+                    }
                 }
             });
         });

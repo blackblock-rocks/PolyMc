@@ -6,6 +6,8 @@ import io.github.theepicblock.polymc.api.wizard.WizardView;
 import io.github.theepicblock.polymc.impl.misc.PolyMapMap;
 import io.github.theepicblock.polymc.impl.misc.WatchListener;
 import io.github.theepicblock.polymc.impl.poly.wizard.FallingBlockWizardInfo;
+import io.github.theepicblock.polymc.impl.poly.wizard.PolyMapFilteredPlayerView;
+import io.github.theepicblock.polymc.impl.poly.wizard.SinglePlayerView;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -60,10 +62,13 @@ public abstract class FallingBlockEntityMixin extends Entity implements WatchLis
 
     @Inject(method = "tick", at = @At("RETURN"))
     private void onTick(CallbackInfo ci) {
+        var allNearbyPlayers = PolyMapFilteredPlayerView.getAll((ServerWorld)this.getWorld(), this.getChunkPos());
         wizards.forEach(((polyMap, wizard) -> {
             if (wizard == null) return;
-            wizard.onMove(); // It is assumed that sand is constantly falling
-            wizard.onTick();
+            var filteredView = new PolyMapFilteredPlayerView(allNearbyPlayers, polyMap);
+            wizard.onMove(filteredView); // It is assumed that sand is constantly falling
+            wizard.onTick(filteredView);
+            filteredView.sendBatched();
         }));
     }
 
@@ -84,39 +89,51 @@ public abstract class FallingBlockEntityMixin extends Entity implements WatchLis
 
     @Inject(method = "onStartedTrackingBy(Lnet/minecraft/server/network/ServerPlayerEntity;)V", at = @At("RETURN"))
     private void onStartTracking(ServerPlayerEntity player, CallbackInfo ci) {
-        this.addPlayer(player);
+        this.polymc$addPlayer(player);
     }
 
     @Inject(method = "onStoppedTrackingBy(Lnet/minecraft/server/network/ServerPlayerEntity;)V", at = @At("RETURN"))
     private void onStopTracking(ServerPlayerEntity player, CallbackInfo ci) {
-        this.removePlayer(player);
+        this.polymc$removePlayer(player);
+    }
+
+    @Override
+    public void polymc$addPlayer(ServerPlayerEntity playerEntity) {
+        wizards.forEach(((polyMap, wizard) -> {
+            if (wizard == null) return;
+            var view = new SinglePlayerView(playerEntity);
+            wizard.addPlayer(view);
+            view.sendBatched();
+        }));
+    }
+
+    @Override
+    public void polymc$removePlayer(ServerPlayerEntity playerEntity) {
+        wizards.forEach(((polyMap, wizard) -> {
+            if (wizard == null) return;
+            var view = new SinglePlayerView(playerEntity);
+            wizard.removePlayer(view);
+            view.sendBatched();
+        }));
     }
 
     @Inject(method = "setRemoved(Lnet/minecraft/entity/Entity$RemovalReason;)V", at = @At("RETURN"))
     private void onRemove(CallbackInfo ci) {
+        var allNearbyPlayers = PolyMapFilteredPlayerView.getAll((ServerWorld)this.getWorld(), this.getChunkPos());
         wizards.forEach(((polyMap, wizard) -> {
-            if (wizard != null) wizard.onRemove();
+            var filteredView = new PolyMapFilteredPlayerView(allNearbyPlayers, polyMap);
+            if (wizard != null) wizard.onRemove(filteredView);
+            filteredView.sendBatched();
         }));
     }
 
     @Override
-    public void addPlayer(ServerPlayerEntity playerEntity) {
+    public void polymc$removeAllPlayers() {
+        var allNearbyPlayers = PolyMapFilteredPlayerView.getAll((ServerWorld)this.getWorld(), this.getChunkPos());
         wizards.forEach(((polyMap, wizard) -> {
-            if (wizard != null) wizard.addPlayer(playerEntity);
-        }));
-    }
-
-    @Override
-    public void removePlayer(ServerPlayerEntity playerEntity) {
-        wizards.forEach(((polyMap, wizard) -> {
-            if (wizard != null) wizard.removePlayer(playerEntity);
-        }));
-    }
-
-    @Override
-    public void removeAllPlayers() {
-        wizards.forEach(((polyMap, wizard) -> {
-            if (wizard != null) wizard.removeAllPlayers();
+            var filteredView = new PolyMapFilteredPlayerView(allNearbyPlayers, polyMap);
+            if (wizard != null) wizard.removeAllPlayers(filteredView);
+            filteredView.sendBatched();
         }));
     }
 }

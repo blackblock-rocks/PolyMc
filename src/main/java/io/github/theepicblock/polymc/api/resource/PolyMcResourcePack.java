@@ -9,10 +9,10 @@ import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.misc.logging.SimpleLogger;
 import io.github.theepicblock.polymc.impl.resource.ModdedResourceContainerImpl;
 import io.github.theepicblock.polymc.impl.resource.ResourceConstants;
-import io.github.theepicblock.polymc.impl.resource.json.JBlockStateWrapper;
+import io.github.theepicblock.polymc.impl.resource.json.JBlockStateImpl;
 import io.github.theepicblock.polymc.impl.resource.json.JModelImpl;
-import io.github.theepicblock.polymc.impl.resource.json.JModelWrapper;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.logging.log4j.util.TriConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -91,7 +91,7 @@ public interface PolyMcResourcePack {
      */
     default @Nullable JBlockState getOrDefaultBlockState(String namespace, String block) {
         if (this.getBlockState(namespace, block) == null) {
-            this.setBlockState(namespace, block, new JBlockStateWrapper());
+            this.setBlockState(namespace, block, new JBlockStateImpl());
         }
         return this.getBlockState(namespace, block);
     }
@@ -106,7 +106,7 @@ public interface PolyMcResourcePack {
             ModdedResources mergedResources = moddedResources.includeClientJar(PolyMc.LOGGER);
 
             JModel clientModel = mergedResources.getItemModel(namespace, model);
-            JModelWrapper newModel = new JModelWrapper(clientModel);
+            JModelImpl newModel = new JModelImpl(clientModel);
 
             if (ArrayUtils.contains(new String[]{"leather_helmet", "leather_chestplate", "leather_leggings", "leather_boots"}, model)) {
                 newModel.getTextures().put("layer1", "item/"+model+"_overlay");
@@ -132,6 +132,11 @@ public interface PolyMcResourcePack {
     @Nullable PolyMcAsset getAsset(String namespace, String path);
 
     void write(Path location, SimpleLogger logger);
+
+    /**
+     * @param consumer consumes the namespace, path and the asset of each asset in this resource pack
+     */
+    void forEachAsset(TriConsumer<String, String, PolyMcAsset> consumer);
 
     @NotNull Gson getGson();
 }
