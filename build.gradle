@@ -1,7 +1,7 @@
 plugins {
-	id 'fabric-loom' version '0.10-SNAPSHOT'
+	id 'fabric-loom' version '0.12-SNAPSHOT'
 	id 'maven-publish'
-	id "io.github.juuxel.loom-quiltflower-mini" version "1.0.0"
+	id 'io.github.juuxel.loom-quiltflower' version '1.7.1'
 	id 'org.ajoberstar.grgit' version '4.1.0'
 }
 
@@ -22,6 +22,12 @@ repositories {
 			includeGroup("nl.theepicblock")
 		}
 	}
+	maven {
+		url "https://maven.nucleoid.xyz"
+		content {
+			includeGroup("xyz.nucleoid")
+		}
+	}
 }
 
 dependencies {
@@ -30,16 +36,18 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
 	modImplementation include("nl.theepicblock:resource-locator-api:${project.resource_lookup_api_version}")
+	modImplementation include("xyz.nucleoid:packet-tweaker:${project.packet_tweaker_version}")
 
 	// Compat
-	modCompileOnly "com.github.CaffeineMC.lithium-fabric:lithium:${project.lithium_version}"
-	modCompileOnly("com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:${project.immersive_portals_version}") {
-		exclude(group: "net.fabricmc.fabric-api")
+	modCompileOnly("com.github.CaffeineMC.lithium-fabric:lithium:${project.lithium_version}") {
 		transitive(false)
 	}
-	modCompileOnly("com.github.qouteall.ImmersivePortalsMod:q_misc_util:${project.immersive_portals_version}"){
-		exclude(group: "net.fabricmc.fabric-api")
+	modCompileOnly("com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:${project.immersive_portals_version}") {
+		transitive(false)
+	}
+	modCompileOnly("com.github.qouteall.ImmersivePortalsMod:q_misc_util:${project.immersive_portals_version}") {
 		transitive(false)
 	}
 }

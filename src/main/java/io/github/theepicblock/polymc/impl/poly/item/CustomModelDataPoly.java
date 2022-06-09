@@ -29,7 +29,6 @@ import io.github.theepicblock.polymc.impl.resource.ResourceConstants;
 import io.github.theepicblock.polymc.mixins.item.EntityAttributeUuidAccessor;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -42,10 +41,8 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Pair;
 import net.minecraft.util.registry.Registry;
@@ -107,11 +104,6 @@ public class CustomModelDataPoly implements ItemPoly {
         stack.setNbt(tag);
     }
 
-    @Override
-    public ItemStack getClientItem(ItemStack input, @Nullable ItemLocation location) {
-        return getClientItem(input, null, location);
-    }
-
     @SuppressWarnings("ConstantConditions")
     @Override
     public ItemStack getClientItem(ItemStack input, @Nullable ServerPlayerEntity player, @Nullable ItemLocation location) {
@@ -126,8 +118,6 @@ public class CustomModelDataPoly implements ItemPoly {
 
         // Add custom tooltips. Don't bother showing them if the item's not in the inventory
         if (Util.isSectionVisible(input, ItemStack.TooltipSection.ADDITIONAL) && isInventory(location)) {
-            Entity holder = input.getHolder(); // This is not usually guaranteed to get the correct player. It works here though.
-
             var tooltips = new ArrayList<Text>(0);
             try {
                 input.getItem().appendTooltip(input, player == null ? null : player.world, tooltips, TooltipContext.Default.NORMAL);
@@ -185,8 +175,8 @@ public class CustomModelDataPoly implements ItemPoly {
                     // This will only include the default attributes
                     var attributes = base.getAttributeModifiers(slotType);
                     if (!attributes.isEmpty()) {
-                        lore.add(toStr(LiteralText.EMPTY));
-                        lore.add(toStr(explicitlySetItalics((new TranslatableText("item.modifiers." + slotType.getName())).formatted(Formatting.GRAY))));
+                        lore.add(toStr(Text.empty()));
+                        lore.add(toStr(explicitlySetItalics((Text.translatable("item.modifiers." + slotType.getName())).formatted(Formatting.GRAY))));
                         for (var entry : attributes.entries()) {
                             var attributeModifier = entry.getValue();
                             double v = attributeModifier.getValue();
@@ -214,12 +204,12 @@ public class CustomModelDataPoly implements ItemPoly {
                             }
 
                             if (bl) {
-                                lore.add(toStr(explicitlySetItalics((new LiteralText(" ")).append(new TranslatableText("attribute.modifier.equals." + attributeModifier.getOperation().getId(), ItemStack.MODIFIER_FORMAT.format(e), new TranslatableText(entry.getKey().getTranslationKey()))).formatted(Formatting.DARK_GREEN))));
+                                lore.add(toStr(explicitlySetItalics((Text.literal(" ")).append(Text.translatable("attribute.modifier.equals." + attributeModifier.getOperation().getId(), ItemStack.MODIFIER_FORMAT.format(e), Text.translatable(entry.getKey().getTranslationKey()))).formatted(Formatting.DARK_GREEN))));
                             } else if (v > 0.0) {
-                                lore.add(toStr(explicitlySetItalics((new TranslatableText("attribute.modifier.plus." + attributeModifier.getOperation().getId(), ItemStack.MODIFIER_FORMAT.format(e), new TranslatableText(entry.getKey().getTranslationKey()))).formatted(Formatting.BLUE))));
+                                lore.add(toStr(explicitlySetItalics((Text.translatable("attribute.modifier.plus." + attributeModifier.getOperation().getId(), ItemStack.MODIFIER_FORMAT.format(e), Text.translatable(entry.getKey().getTranslationKey()))).formatted(Formatting.BLUE))));
                             } else if (v < 0.0) {
                                 e *= -1.0;
-                                lore.add(toStr(explicitlySetItalics((new TranslatableText("attribute.modifier.take." + attributeModifier.getOperation().getId(), ItemStack.MODIFIER_FORMAT.format(e), new TranslatableText(entry.getKey().getTranslationKey()))).formatted(Formatting.RED))));
+                                lore.add(toStr(explicitlySetItalics((Text.translatable("attribute.modifier.take." + attributeModifier.getOperation().getId(), ItemStack.MODIFIER_FORMAT.format(e), Text.translatable(entry.getKey().getTranslationKey()))).formatted(Formatting.RED))));
                             }
                         }
                     }

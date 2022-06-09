@@ -194,7 +194,7 @@ public class Util {
      */
     public static int getPolydRawIdFromState(BlockState state, ServerPlayerEntity playerEntity) {
         PolyMap map = Util.tryGetPolyMap(playerEntity);
-        return map.getClientStateRawId(state, playerEntity);
+        return Block.STATE_IDS.getRawId(map.getClientState(state, playerEntity));
     }
 
     /**
@@ -204,7 +204,7 @@ public class Util {
      * @see PolyMap#isVanillaLikeMap()
      */
     public static boolean isPolyMapVanillaLike(ServerPlayerEntity client) {
-        return PolyMapProvider.getPolyMap(client).isVanillaLikeMap();
+        return tryGetPolyMap(client).isVanillaLikeMap();
     }
 
     public static BlockPos fromPalettedContainerIndex(int index) {
