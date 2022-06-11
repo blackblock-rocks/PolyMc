@@ -45,7 +45,8 @@ public abstract class PaletteBlockPolyImplementation<T> {
 
             PolyMap map = Util.tryGetPolyMap(player);
             //noinspection unchecked
-            return Block.STATE_IDS.getRawId(map.getClientState((BlockState)object, player));
+            //return Block.STATE_IDS.getRawId(map.getClientState((BlockState)object, player));
+            return map.getClientStateRawId((BlockState)object, player);
         }
 
         return instance.getRawId(object);
