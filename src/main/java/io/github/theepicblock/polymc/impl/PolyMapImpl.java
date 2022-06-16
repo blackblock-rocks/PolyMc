@@ -133,6 +133,12 @@ public class PolyMapImpl implements PolyMap {
             }
         }
 
+        if (result == null) {
+            result = new ItemStack(Items.CLAY_BALL);
+            result.setCustomName(Text.literal("There was an error with this item (" + serverItem.getName().getString() + "). Tell Ske."));
+            PolyMc.LOGGER.error("Failed to get client item for " + player + ": " + serverItem);
+        }
+
         return result;
     }
 

@@ -15,24 +15,11 @@ import java.util.Optional;
 
 @Mixin(targets = "net/minecraft/entity/data/TrackedDataHandlerRegistry$2")
 public class TrackedDataImplementation {
-    /*@ModifyArg(method = "write(Lnet/minecraft/network/PacketByteBuf;Ljava/util/Optional;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/Block;getRawIdFromState(Lnet/minecraft/block/BlockState;)I"))
+    @ModifyArg(method = "write(Lnet/minecraft/network/PacketByteBuf;Ljava/util/Optional;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/Block;getRawIdFromState(Lnet/minecraft/block/BlockState;)I"))
     private BlockState redirectGetRawId(BlockState state) {
         var player = PacketContext.get().getTarget();
         var map = Util.tryGetPolyMap(player);
 
         return map.getClientState(state, player);
-    }*/
-
-    @Inject(method = "write(Lnet/minecraft/network/PacketByteBuf;Ljava/util/Optional;)V", at=@At("HEAD"), cancellable = true)
-    private void getRawId(PacketByteBuf packetByteBuf, Optional<BlockState> optional, CallbackInfo ci) {
-        if (optional.isPresent()) {
-            var player = PacketContext.get().getTarget();
-            System.out.println("Got player: " + player);
-            BlockState state = optional.get();
-            packetByteBuf.writeVarInt(Util.getPolydRawIdFromState(state, player));
-
-        } else {
-            packetByteBuf.writeVarInt(0);
-        }
     }
 }
