@@ -38,6 +38,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 public interface PolyMap {
@@ -59,6 +60,7 @@ public interface PolyMap {
     /**
      * Get the raw id of the clientside blockstate.
      */
+    @ApiStatus.Internal
     default int getClientStateRawId(BlockState state, ServerPlayerEntity playerEntity) {
         BlockState clientState = this.getClientState(state, playerEntity);
 
