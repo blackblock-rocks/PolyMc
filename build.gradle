@@ -131,6 +131,9 @@ task getClientSha1 {
 }
 
 def getVersionMetadata() {
+	// I prefer to keep git hashes out of my builds,
+	// it's easier for testing
+	return "";
 	if (grgit != null) {
 		def head = grgit.head()
 		def headTag = grgit.tag.list().find {
