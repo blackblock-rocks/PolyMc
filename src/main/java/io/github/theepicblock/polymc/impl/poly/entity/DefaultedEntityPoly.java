@@ -1,48 +1,52 @@
 package io.github.theepicblock.polymc.impl.poly.entity;
 
 import io.github.theepicblock.polymc.api.entity.EntityPoly;
-import io.github.theepicblock.polymc.api.wizard.PacketConsumer;
-import io.github.theepicblock.polymc.api.wizard.VItem;
-import io.github.theepicblock.polymc.api.wizard.Wizard;
-import io.github.theepicblock.polymc.api.wizard.WizardInfo;
+import io.github.theepicblock.polymc.api.wizard.*;
+import io.github.theepicblock.polymc.impl.poly.wizard.AbstractVirtualEntity;
 import io.github.theepicblock.polymc.impl.poly.wizard.EntityUtil;
 import io.github.theepicblock.polymc.mixins.wizards.EntityAccessor;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.data.DataTracker;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 
 import java.util.List;
 import java.util.Optional;
 
-public class MissingEntityPoly<T extends Entity> implements EntityPoly<T> {
-    @Override
-    public Wizard createWizard(WizardInfo info, T entity) {
-        return new MissingEntityWizard<>(info, entity);
+public class DefaultedEntityPoly<T extends Entity> implements EntityPoly<T> {
+    private final EntityType<?> displayType;
+
+    public DefaultedEntityPoly(EntityType<?> display) {
+        this.displayType = display;
     }
 
-    public static class MissingEntityWizard<T extends Entity> extends EntityWizard<T> {
-        private static final ItemStack ITEM = new ItemStack(Items.RED_STAINED_GLASS_PANE);
-        private final VItem item;
+    @Override
+    public Wizard createWizard(WizardInfo info, T entity) {
+        return new DefaultedEntityWizard<>(info, entity, this.displayType);
+    }
 
-        public MissingEntityWizard(WizardInfo info, T entity) {
+    public static class DefaultedEntityWizard<T extends Entity> extends EntityWizard<T> {
+        private final VirtualEntity virtualEntity;
+
+        public DefaultedEntityWizard(WizardInfo info, T entity, EntityType<?> type) {
             super(info, entity);
-            item = new VItem();
+            virtualEntity = new AbstractVirtualEntity(entity.getUuid(), entity.getId()) {
+                @Override
+                public EntityType<?> getEntityType() {
+                    return type;
+                }
+            };
         }
 
         @Override
         public void onMove(PacketConsumer players) {
-            item.move(players, this.getPosition(), (byte)0, (byte)0, true);
         }
 
         @Override
         public void addPlayer(PacketConsumer player) {
-            item.spawn(player, this.getPosition());
-            item.setNoGravity(player, true);
-            item.sendItem(player, ITEM);
+            virtualEntity.spawn(player, this.getPosition());
 
             player.sendPacket(EntityUtil.createDataTrackerUpdate(
-                    this.item.getId(),
+                    this.virtualEntity.getId(),
                     List.of(
                             new DataTracker.Entry<>(EntityAccessor.getCustomName(), Optional.of(this.getEntity().getName())),
                             new DataTracker.Entry<>(EntityAccessor.getNameVisible(), true))
@@ -52,7 +56,7 @@ public class MissingEntityPoly<T extends Entity> implements EntityPoly<T> {
 
         @Override
         public void removePlayer(PacketConsumer player) {
-            item.remove(player);
+            virtualEntity.remove(player);
         }
     }
 }
