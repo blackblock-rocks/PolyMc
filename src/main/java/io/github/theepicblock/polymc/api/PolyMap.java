@@ -36,12 +36,12 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -130,6 +130,6 @@ public interface PolyMap {
      * @see EntityAttributesFilteringMixin
      */
     default boolean canReceiveEntityAttribute(EntityAttribute attribute) {
-        return Util.isVanilla(Registry.ATTRIBUTE.getId(attribute));
+        return Util.isVanilla(Registries.ATTRIBUTE.getId(attribute));
     }
 }
