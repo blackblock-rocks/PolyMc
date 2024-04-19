@@ -2,10 +2,7 @@ package io.github.theepicblock.polymc.impl.resource;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.github.theepicblock.polymc.api.resource.AssetWithDependencies;
-import io.github.theepicblock.polymc.api.resource.ModdedResources;
-import io.github.theepicblock.polymc.api.resource.PolyMcAsset;
-import io.github.theepicblock.polymc.api.resource.PolyMcResourcePack;
+import io.github.theepicblock.polymc.api.resource.*;
 import io.github.theepicblock.polymc.impl.misc.logging.SimpleLogger;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +14,7 @@ import java.util.TreeMap;
 
 public class ResourcePackImplementation implements PolyMcResourcePack {
     private final Map<String, Map<String, PolyMcAsset>> assets = new TreeMap<>();
-    private final Gson gson = new GsonBuilder().enableComplexMapKeySerialization().disableHtmlEscaping().create();
+    private final Gson gson = PolyMcSerializer.createGson();
 
     @Override
     public void importRequirements(ModdedResources input, AssetWithDependencies asset, SimpleLogger logger) {

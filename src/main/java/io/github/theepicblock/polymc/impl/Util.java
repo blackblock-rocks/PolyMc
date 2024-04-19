@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import io.github.theepicblock.polymc.PolyMc;
 import io.github.theepicblock.polymc.api.PolyMap;
 import io.github.theepicblock.polymc.api.misc.PolyMapProvider;
+import io.github.theepicblock.polymc.api.resource.PolyMcSerializer;
 import io.github.theepicblock.polymc.impl.mixin.BlockStateDuck;
 import io.github.theepicblock.polymc.mixins.ItemStackAccessor;
 import net.fabricmc.fabric.api.entity.FakePlayer;
@@ -48,9 +49,10 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 public class Util {
-    public static final Gson GSON = new Gson();
+    public static final Gson GSON = PolyMcSerializer.createGson();
     public static final String MC_NAMESPACE = "minecraft";
     private static final Splitter COMMA_SPLITTER = Splitter.on(',').omitEmptyStrings().trimResults();
     private static boolean HAS_LOGGED_POLYMAP_ERROR = false;
@@ -113,6 +115,22 @@ public class Util {
      */
     public static Iterable<String> splitBlockStateString(String string) {
         return COMMA_SPLITTER.split(string);
+    }
+
+    /**
+     * Splits a string like `facing=east,half=lower,hinge=left,open=false`
+     * into a key-value map
+     */
+    public static Map<String, String> getPropertyMap(String propertyString) {
+
+        Map<String, String> properties = new TreeMap<>();
+
+        for (var property: Util.splitBlockStateString(propertyString)) {
+            var pair = property.split("=", 2);
+            properties.put(pair[0], pair[1]);
+        }
+
+        return properties;
     }
 
     /**

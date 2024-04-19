@@ -1,6 +1,7 @@
 package io.github.theepicblock.polymc.api.resource.json;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.github.theepicblock.polymc.impl.Util;
@@ -37,31 +38,38 @@ public class JBlockStateMultipart {
     /**
      * Create a new JBlockStateMultipart from a property string and a list of variants
      */
-    public static List<JsonElement> jsonElementFrom(String propertyString, JBlockStateVariant[] variants) {
+    public static JsonElement jsonElementFrom(String propertyString, JBlockStateVariant[] variants) {
 
-        List<JsonElement> result = new ArrayList<>();
+        JsonArray applyArray = new JsonArray();
 
-        if (variants == null) {
-            return result;
-        }
-
-        for (var variant : variants) {
-            JsonObject object = new JsonObject();
-            object.add("apply", new Gson().toJsonTree(variant));
-
-            JsonObject when = new JsonObject();
-
-            for (var property : Util.splitBlockStateString(propertyString)) {
-                // Split "facing=east" into "facing" and "east"
-                var pair = property.split("=", 2);
-                when.addProperty(pair[0], pair[1]);
+        if (variants != null) {
+            for (var variant : variants) {
+                applyArray.add(new Gson().toJsonTree(variant));
             }
-
-            object.add("when", when);
-            result.add(object);
         }
 
-        return result;
+        return jsonElementFrom(propertyString, applyArray);
+    }
+
+    /**
+     * Create a new JBlockStateMultipart from a property string and a json element
+     */
+    public static JsonElement jsonElementFrom(String propertyString, JsonElement apply) {
+
+        JsonObject object = new JsonObject();
+        object.add("apply", apply);
+
+        JsonObject when = new JsonObject();
+
+        for (var property : Util.splitBlockStateString(propertyString)) {
+            // Split "facing=east" into "facing" and "east"
+            var pair = property.split("=", 2);
+            when.addProperty(pair[0], pair[1]);
+        }
+
+        object.add("when", when);
+
+        return object;
     }
 
     public JBlockStateVariant getApply() {

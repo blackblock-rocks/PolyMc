@@ -3,6 +3,7 @@ package io.github.theepicblock.polymc.api.resource.json;
 import io.github.theepicblock.polymc.api.resource.PolyMcAsset;
 import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.resource.json.JBlockStateImpl;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -12,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface JBlockState extends PolyMcAsset {
+    void setBlock(String namespace, String name);
     void setVariant(String propertyString, JBlockStateVariant[] variants);
     void setMultipart(String propertyString, JBlockStateVariant[] variants);
 
@@ -40,6 +42,11 @@ public interface JBlockState extends PolyMcAsset {
     default @Nullable String getMultipartVariantId(BlockState state) {
         return null;
     }
+
+    /**
+     * Convert this blockstate file to only use multipart entries
+     */
+    default void convertToMultipart() {};
 
     /**
      * Returns the entry in {@link #getPropertyStrings()} that best matches the provided {@link BlockState}

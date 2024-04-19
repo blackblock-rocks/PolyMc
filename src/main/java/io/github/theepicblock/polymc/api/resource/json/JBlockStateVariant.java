@@ -1,8 +1,10 @@
 package io.github.theepicblock.polymc.api.resource.json;
 
+import com.google.gson.JsonElement;
 import io.github.theepicblock.polymc.api.resource.AssetWithDependencies;
 import io.github.theepicblock.polymc.api.resource.ModdedResources;
 import io.github.theepicblock.polymc.api.resource.PolyMcResourcePack;
+import io.github.theepicblock.polymc.api.resource.PolyMcSerializer;
 import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.misc.logging.SimpleLogger;
 import net.minecraft.util.Identifier;
@@ -10,7 +12,10 @@ import net.minecraft.util.Identifier;
 import java.util.Objects;
 
 @SuppressWarnings("ClassCanBeRecord") // Records don't work with GSON
-public class JBlockStateVariant implements AssetWithDependencies {
+public class JBlockStateVariant implements
+        AssetWithDependencies,
+        PolyMcSerializer.JsonDeserializable
+{
     private final String model;
     private final int x;
     private final int y;
@@ -65,5 +70,10 @@ public class JBlockStateVariant implements AssetWithDependencies {
     @Override
     public int hashCode() {
         return Objects.hash(model, x, y, uvlock);
+    }
+
+    @Override
+    public void fromJson(JsonElement json) {
+
     }
 }

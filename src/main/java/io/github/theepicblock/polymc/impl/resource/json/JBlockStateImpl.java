@@ -3,16 +3,18 @@ package io.github.theepicblock.polymc.impl.resource.json;
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
-import io.github.theepicblock.polymc.api.resource.ModdedResources;
-import io.github.theepicblock.polymc.api.resource.PolyMcResourcePack;
+import io.github.theepicblock.polymc.api.resource.PolyMcSerializer;
 import io.github.theepicblock.polymc.api.resource.json.JBlockState;
 import io.github.theepicblock.polymc.api.resource.json.JBlockStateMultipart;
 import io.github.theepicblock.polymc.api.resource.json.JBlockStateVariant;
 import io.github.theepicblock.polymc.impl.Util;
-import io.github.theepicblock.polymc.impl.misc.logging.SimpleLogger;
 import io.github.theepicblock.polymc.impl.resource.ResourceGenerationException;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.registry.Registries;
+import net.minecraft.state.StateManager;
 import net.minecraft.state.property.Property;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +25,7 @@ import java.io.OutputStream;
 import java.util.*;
 
 @ApiStatus.Internal
-public class JBlockStateImpl implements JBlockState {
+public class JBlockStateImpl implements JBlockState, PolyMcSerializer.JsonSerializable {
     /**
      * If there's a credit field, keep it. We don't want to erase attribution
      */
@@ -31,9 +33,100 @@ public class JBlockStateImpl implements JBlockState {
     private String credit;
 
     public final Map<String, JsonElement> variants = new TreeMap<>();
-    public final ArrayList<JsonElement> multipart = new ArrayList<>();
+    public List<JsonElement> multipart = null;
+    private Map<String, JsonElement> vanillaMultipartIds = new TreeMap<>();
+
+    private String namespace = null;
+    private String name = null;
+    private Identifier blockId = null;
 
     public JBlockStateImpl() {
+    }
+
+    public void setBlock(String namespace, String name) {
+        this.namespace = namespace;
+        this.name = name;
+        this.blockId = new Identifier(namespace, name);
+    }
+
+    @Nullable
+    private Block getBlock() {
+
+        if (!"minecraft".equals(this.namespace)) {
+            return null;
+        }
+
+        return Registries.BLOCK.get(this.blockId);
+
+    }
+
+    public void convertToMultipart() {
+
+        if (this.variants.isEmpty()) {
+            return;
+        }
+
+        Block block = this.getBlock();
+
+        if (block == null) {
+            return;
+        }
+
+        Map<String, JsonElement> variants = new TreeMap<>(this.variants);
+        this.variants.clear();
+
+        // The variants might not target all properties,
+        // so we have to duplicate them to make sure that they do
+        StateManager<Block, BlockState> manager = block.getStateManager();
+        List<BlockState> allStates = manager.getStates();
+        Collection<Property<?>> allProperties = manager.getProperties();
+
+        // Iterate over all the variants
+        variants.forEach((propertyString, jsonElement) -> {
+
+            List<BlockState> matchingStates = new ArrayList<>();
+            Map<String, String> properties = Util.getPropertyMap(propertyString);
+
+            // Iterate over all the blockstates and find the ones that match
+            for (BlockState state : allStates) {
+                // See if this state matches the property string
+                boolean matches = true;
+
+                for (var entry : properties.entrySet()) {
+                    Property<?> property = manager.getProperty(entry.getKey());
+
+                    if (property == null) {
+                        matches = false;
+                        break;
+                    }
+
+                    Comparable<?> value = state.get(property);
+
+                    // If the value is null, return false
+                    if (value == null) {
+                        matches = false;
+                        break;
+                    }
+
+                    if (!value.toString().equals(entry.getValue())) {
+                        matches = false;
+                        break;
+                    }
+                }
+
+                if (matches) {
+                    matchingStates.add(state);
+                }
+            }
+
+            // Create multipart entries out of all the matching states
+            for (BlockState matchingState : matchingStates) {
+                String stateId = Util.getPropertiesFromBlockState(matchingState);
+                JsonElement stateMultipartEntry = JBlockStateMultipart.jsonElementFrom(stateId, jsonElement);
+                this.setMultipart(stateId, stateMultipartEntry);
+                this.vanillaMultipartIds.put(stateId, stateMultipartEntry);
+            }
+        });
     }
 
     @ApiStatus.Internal
@@ -50,22 +143,7 @@ public class JBlockStateImpl implements JBlockState {
     @Override
     @Nullable
     public String getMultipartVariantId(BlockState state) {
-
-        StringBuilder result = new StringBuilder();
-
-        // Iterate over all the properties this state has
-        for (Property<?> property : state.getProperties()) {
-            String key = property.getName();
-            String value = state.get(property).toString();
-
-            if (result.isEmpty()) {
-                result = new StringBuilder(key + "=" + value);
-            } else {
-                result.append(",").append(key).append("=").append(value);
-            }
-        }
-
-        return result.toString();
+        return Util.getPropertiesFromBlockState(state);
     }
 
     /**
@@ -76,7 +154,7 @@ public class JBlockStateImpl implements JBlockState {
     @Nullable
     public JBlockStateVariant[] getMultipartVariantsBestMatching(BlockState state) {
 
-        if (this.multipart.isEmpty()) {
+        if (this.multipart == null || this.multipart.isEmpty()) {
             return null;
         }
 
@@ -112,7 +190,7 @@ public class JBlockStateImpl implements JBlockState {
      */
     private static JBlockStateVariant[] getVariantsFromJsonElement(JsonElement input) {
         if (input instanceof JsonObject jsonObject) {
-            var variant = new Gson().fromJson(jsonObject, JBlockStateVariant.class);
+            var variant = PolyMcSerializer.deserialize(jsonObject, JBlockStateVariant.class);
             var returnArray = new JBlockStateVariant[1];
             returnArray[0] = variant;
             return returnArray;
@@ -134,17 +212,33 @@ public class JBlockStateImpl implements JBlockState {
 
     @Override
     public void setVariant(String propertyString, JBlockStateVariant[] variants) {
-        this.variants.put(propertyString, variantsToJsonElement(variants));
+        //this.variants.put(propertyString, variantsToJsonElement(variants));
+        this.setMultipart(propertyString, JBlockStateMultipart.jsonElementFrom(propertyString, variants));
     }
 
     @Override
     public void setMultipart(String propertyString, JBlockStateVariant[] variants) {
+        this.setMultipart(propertyString, JBlockStateMultipart.jsonElementFrom(propertyString, variants));
+    }
+
+    protected void setMultipart(String propertyString, JsonElement multipart) {
+
+        if (this.multipart == null) {
+            this.multipart = new ArrayList<>();
+        }
 
         // Make sure to delete any possible variant matching this property string,
         // since variants take precedence over multipart
         this.variants.remove(propertyString);
+        this.multipart.add(multipart);
 
-        this.multipart.addAll(JBlockStateMultipart.jsonElementFrom(propertyString, variants));
+        if (this.vanillaMultipartIds.containsKey(propertyString)) {
+            JsonElement originalEntry = this.vanillaMultipartIds.get(propertyString);
+
+            // Remove the element from the multipart list
+            this.multipart.remove(originalEntry);
+            this.vanillaMultipartIds.remove(propertyString);
+        }
     }
 
     @Override
@@ -168,5 +262,37 @@ public class JBlockStateImpl implements JBlockState {
     @Override
     public void writeToStream(OutputStream stream, Gson gson) throws IOException {
         Util.writeJsonToStream(stream, gson, this);
+    }
+
+    @Override
+    public JsonElement toJson(JsonSerializationContext context) {
+
+        JsonObject result = new JsonObject();
+
+        if (this.credit != null) {
+            result.addProperty("credit", this.credit);
+        }
+
+        if (!this.variants.isEmpty()) {
+            JsonObject variantObject = new JsonObject();
+
+            for (var entry : this.variants.entrySet()) {
+                variantObject.add(entry.getKey(), entry.getValue());
+            }
+
+            result.add("variants", variantObject);
+        }
+
+        if (this.multipart != null) {
+            JsonArray multipartArray = new JsonArray();
+
+            for (JsonElement entry : this.multipart) {
+                multipartArray.add(entry);
+            }
+
+            result.add("multipart", multipartArray);
+        }
+
+        return result;
     }
 }

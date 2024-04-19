@@ -109,6 +109,8 @@ public interface PolyMcResourcePack {
                 blockState = new JBlockStateImpl();
             }
 
+            blockState.setBlock(namespace, block);
+            blockState.convertToMultipart();
             this.setBlockState(namespace, block, blockState);
         }
 
