@@ -35,9 +35,9 @@ public interface ResourceContainer {
         return new TextureAsset(textureStream, getInputStreamSupplier(namespace, metaPath));
     }
 
-    default @Nullable SoundAsset getSound(String namespace, String sound) {
+    default @Nullable SimpleAsset getSound(String namespace, String sound) {
         var stream = getInputStreamSupplier(namespace, ResourceConstants.sound(sound));
-        return stream == null ? null : new SoundAsset(stream);
+        return stream == null ? null : new SimpleAsset(stream);
     }
 
     /**

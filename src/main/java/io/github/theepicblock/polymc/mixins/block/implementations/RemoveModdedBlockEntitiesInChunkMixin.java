@@ -9,6 +9,7 @@ import net.minecraft.network.packet.s2c.play.ChunkData;
 import net.minecraft.util.math.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import xyz.nucleoid.packettweaker.PacketContext;
 
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,7 @@ import java.util.Map;
 public class RemoveModdedBlockEntitiesInChunkMixin {
     @WrapWithCondition(method = "<init>(Lnet/minecraft/world/chunk/WorldChunk;)V", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z"))
     private boolean skipUnsupportedBlockEntities(List<?> instance, Object e, @Local Map.Entry<BlockPos, BlockEntity> entry) {
-        var player = PolymerCommonUtils.getPlayerContext();
+        var player = PacketContext.get();
         var polyMap = Util.tryGetPolyMap(player);
 
         return polyMap.canReceiveBlockEntity(entry.getValue().getType());

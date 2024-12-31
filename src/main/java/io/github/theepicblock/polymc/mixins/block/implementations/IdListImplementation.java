@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import xyz.nucleoid.packettweaker.PacketContext;
 
 @Mixin(PalettedContainer.Data.class)
 public class IdListImplementation {
@@ -27,7 +28,7 @@ public class IdListImplementation {
             return originalStorage;
         }
 
-        var player = PolymerCommonUtils.getPlayerContext();
+        var player = PacketContext.get();
         var polyMap = Util.tryGetPolyMap(player);
 
         if (!polyMap.isVanillaLikeMap()) {
@@ -53,7 +54,7 @@ public class IdListImplementation {
             long newLong = 0;
             for (int k = 0; k < elementsPerLong; k++) {
                 var oldElementValue = oldLong & maxValue;
-                var newElementValue = transform(oldElementValue, polyMap, player);
+                var newElementValue = transform(oldElementValue, polyMap, player.getPlayer());
 
                 newLong |= newElementValue << (elementBits * k); // Insert the next element
                 oldLong >>= elementBits; // Shift oldLong to read the next element

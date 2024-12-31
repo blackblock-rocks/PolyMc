@@ -35,13 +35,13 @@ public record BlockItemType(@NotNull BlockPlacementBehaviour placementBehaviour,
         if (o == null || getClass() != o.getClass()) return false;
         BlockItemType that = (BlockItemType)o;
         return placementBehaviour == that.placementBehaviour &&
-                Objects.equals(placeSound.getId(), that.placeSound.getId()) &&
+                Objects.equals(placeSound.id(), that.placeSound.id()) &&
                 Objects.equals(placeSound.getDistanceToTravel(1), placeSound.getDistanceToTravel(1)) &&
                 Objects.equals(placeSound.getDistanceToTravel(0.5f), placeSound.getDistanceToTravel(0.5f));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(placementBehaviour, placeSound.getId(), placeSound.getDistanceToTravel(1), placeSound.getDistanceToTravel(0.5f));
+        return Objects.hash(placementBehaviour, placeSound.id(), placeSound.getDistanceToTravel(1), placeSound.getDistanceToTravel(0.5f));
     }
 }

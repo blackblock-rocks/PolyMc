@@ -33,7 +33,7 @@ public interface PolyMcResourcePack {
         setAsset(namespace, ResourceConstants.texture(path), texture);
     }
 
-    default void setSound(String namespace, String path, SoundAsset sound) {
+    default void setSound(String namespace, String path, SimpleAsset sound) {
         setAsset(namespace, ResourceConstants.sound(path), sound);
     }
 
@@ -64,8 +64,8 @@ public interface PolyMcResourcePack {
         return (TextureAsset)this.getAsset(namespace, ResourceConstants.texture(texture));
     }
 
-    default @Nullable SoundAsset getSound(String namespace, String sound) {
-        return (SoundAsset)this.getAsset(namespace, ResourceConstants.sound(sound));
+    default @Nullable SimpleAsset getSound(String namespace, String sound) {
+        return (SimpleAsset)this.getAsset(namespace, ResourceConstants.sound(sound));
     }
 
     /**

@@ -16,14 +16,14 @@ public class BlockBreakingUtil {
 
     public static Collection<EntityAttributeInstance> DISABLER_ATTRIBUTES = Collections.singleton(
             new EntityAttributeInstance(
-                    EntityAttributes.PLAYER_BLOCK_BREAK_SPEED,
+                    EntityAttributes.BLOCK_BREAK_SPEED,
                     (update) -> {}
             )
     );
 
     public static Collection<EntityAttributeInstance> REMOVE_DISABLER_ATTRIBUTES = Collections.singleton(
             new EntityAttributeInstance(
-                    EntityAttributes.PLAYER_BLOCK_BREAK_SPEED,
+                    EntityAttributes.BLOCK_BREAK_SPEED,
                     (update) -> {}
             )
     );

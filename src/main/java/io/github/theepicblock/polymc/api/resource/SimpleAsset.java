@@ -7,10 +7,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class SoundAsset implements PolyMcAsset {
+public class SimpleAsset implements PolyMcAsset {
     private final InputSupplier<InputStream> inner;
 
-    public SoundAsset(InputSupplier<InputStream> inner) {
+    public SimpleAsset(InputSupplier<InputStream> inner) {
         this.inner = inner;
     }
 

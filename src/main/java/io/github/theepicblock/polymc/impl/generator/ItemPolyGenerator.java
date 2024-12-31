@@ -25,9 +25,7 @@ import io.github.theepicblock.polymc.common.BlockItemType;
 import io.github.theepicblock.polymc.impl.ConfigManager;
 import io.github.theepicblock.polymc.impl.poly.item.*;
 import net.minecraft.block.Block;
-import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.item.*;
-import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
@@ -42,74 +40,66 @@ public class ItemPolyGenerator {
     public static ItemPoly generatePoly(Item item, PolyRegistry builder) {
         var cmdManager = builder.getSharedValues(CustomModelDataManager.KEY);
 
-        if (item instanceof ArmorItem armorItem) {
-            if (builder.getSharedValues(ArmorColorManager.KEY).isEmpty()) {
-                FancyPantsItemPoly.onFirstRegister(builder);
-            }
-            return new FancyPantsItemPoly(builder, armorItem);
-        }
         if (item instanceof AxeItem) {
-            return new DamageableItemPoly(cmdManager, item, Items.IRON_AXE);
+            return new SimpleItemPoly(Items.IRON_AXE);
         }
         if (item instanceof PickaxeItem) {
-            return new DamageableItemPoly(cmdManager, item, Items.IRON_PICKAXE);
+            return new SimpleItemPoly(Items.IRON_PICKAXE);
         }
         if (item instanceof HoeItem) {
-            return new DamageableItemPoly(cmdManager, item, Items.IRON_HOE);
+            return new SimpleItemPoly(Items.IRON_HOE);
         }
         if (item instanceof ShovelItem) {
-            return new DamageableItemPoly(cmdManager, item, Items.IRON_SHOVEL);
+            return new SimpleItemPoly(Items.IRON_SHOVEL);
         }
         if (item instanceof SwordItem) {
-            return new DamageableItemPoly(cmdManager, item, Items.IRON_SWORD);
+            return new SimpleItemPoly(Items.IRON_SWORD);
         }
         if (item instanceof MiningToolItem) {
-            return new DamageableItemPoly(cmdManager, item, Items.STONE_HOE);
+            return new SimpleItemPoly(Items.STONE_HOE);
         }
         if (item instanceof ShieldItem) {
-            return new DamageableItemPoly(cmdManager, item, Items.SHIELD);
+            return new SimpleItemPoly(Items.SHIELD);
         }
         if (item instanceof FishingRodItem) {
-            return new DamageableItemPoly(cmdManager, item, Items.FISHING_ROD);
+            return new SimpleItemPoly(Items.FISHING_ROD);
         }
         if (item instanceof CompassItem) {
-            return new CustomModelDataPoly(cmdManager, item, Items.COMPASS);
+            return new SimpleItemPoly(Items.COMPASS);
         }
         if (item instanceof BrushItem) {
-            return new CustomModelDataPoly(cmdManager, item, Items.BRUSH);
+            return new SimpleItemPoly(Items.BRUSH);
         }
         if (item instanceof CrossbowItem) {
-            return new DamageableItemPoly(cmdManager, item, Items.CROSSBOW);
+            return new SimpleItemPoly(Items.CROSSBOW);
         }
         if (item instanceof RangedWeaponItem && item.getMaxUseTime(new ItemStack(item), null) != 0) {
-            return new DamageableItemPoly(cmdManager, item, Items.BOW);
+            return new SimpleItemPoly(Items.BOW);
         }
         if (item instanceof BlockItem blockItem) {
-            if (AbstractFurnaceBlockEntity.canUseAsFuel(new ItemStack(item))) {
-                return new PlaceableItemPoly(cmdManager, item, CustomModelDataManager.FUEL_ITEMS);
-            }
+
+            // Todo: fix fuels
+            //if (AbstractFurnaceBlockEntity.canUseAsFuel(new ItemStack(item))) {
+            //    return new PlaceableItemPoly(CustomModelDataManager.FUEL_ITEMS);
+            //}
 
             if (ConfigManager.getConfig().blockItemMatching) {
                 var blockItemInfo = builder.getSharedValues(BlockItemInfo.KEY);
                 var vanillaEquivalents = blockItemInfo.getExamples(BlockItemType.of(blockItem));
                 if (vanillaEquivalents != null) {
                     // This one doesn't need custom breaking sounds because it's built-in
-                    return new CustomModelDataPoly(cmdManager, item, vanillaEquivalents);
+                    return new SimpleItemPoly(vanillaEquivalents[0]);
                 }
             }
 
-            return new PlaceableItemPoly(cmdManager, item, CustomModelDataManager.BLOCK_ITEMS);
+            return new PlaceableItemPoly(CustomModelDataManager.BLOCK_ITEMS[0]);
         }
-        if (AbstractFurnaceBlockEntity.canUseAsFuel(new ItemStack(item))) {
-            return new CustomModelDataPoly(cmdManager, item, CustomModelDataManager.FUEL_ITEMS);
-        }
-        // TODO when the jvm analyzer is finally merged, we should check if there's an ItemColorProvider registered
-        //      instead of checking tags
-        if (new ItemStack(item).isIn(ItemTags.DYEABLE)) {
-            return new CustomModelDataPoly(cmdManager, item, Items.LEATHER_HORSE_ARMOR);
-        }
+        // Todo: fix fuels
+        //if (AbstractFurnaceBlockEntity.canUseAsFuel(new ItemStack(item))) {
+        //    return new SimpleItemPoly(CustomModelDataManager.FUEL_ITEMS);
+        //}
 
-        return new CustomModelDataPoly(cmdManager, item);
+        return new SimpleItemPoly(Items.TRIAL_KEY);
     }
 
     /**

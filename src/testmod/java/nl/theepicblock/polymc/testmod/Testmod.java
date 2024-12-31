@@ -2,12 +2,12 @@ package nl.theepicblock.polymc.testmod;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.type.BlockSetTypeBuilder;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.block.*;
 import net.minecraft.component.type.FoodComponents;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -18,14 +18,19 @@ import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ArmorItem;
-import net.minecraft.item.ArmorMaterial;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
+import net.minecraft.item.equipment.ArmorMaterial;
+import net.minecraft.item.equipment.EquipmentAssetKeys;
+import net.minecraft.item.equipment.EquipmentType;
 import net.minecraft.potion.Potion;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -37,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumMap;
 import java.util.List;
+import java.util.function.Function;
 
 import static nl.theepicblock.polymc.testmod.YellowStatusEffect.YELLOW;
 
@@ -52,76 +58,51 @@ public class Testmod implements ModInitializer {
             .openableByHand(true)
             .register(id("test_wood"));
 
-    public static final Item TEST_ITEM = new TestItem(new Item.Settings().maxCount(6).rarity(Rarity.EPIC));
-    public static final Item TEST_FOOD = new Item(new Item.Settings().food(FoodComponents.COOKED_CHICKEN));
-    public static final RegistryEntry<ArmorMaterial> TEST_MATERIAL = Registry.registerReference(Registries.ARMOR_MATERIAL, id("armor_material"), new ArmorMaterial(Util.make(new EnumMap<>(ArmorItem.Type.class), (map) -> {
-        map.put(ArmorItem.Type.BOOTS, 1);
-        map.put(ArmorItem.Type.LEGGINGS, 2);
-        map.put(ArmorItem.Type.CHESTPLATE, 3);
-        map.put(ArmorItem.Type.HELMET, 1);
-        map.put(ArmorItem.Type.BODY, 3);
-    }), 5, SoundEvents.AMBIENT_BASALT_DELTAS_ADDITIONS, Ingredient::empty, List.of(new ArmorMaterial.Layer(id("armor_material"))), 1, 1));
-    public static final Item TELMET = new ArmorItem(TEST_MATERIAL, ArmorItem.Type.HELMET, new Item.Settings());
-    public static final Item TESTPLATE = new ArmorItem(TEST_MATERIAL, ArmorItem.Type.CHESTPLATE, new Item.Settings());
-    public static final Item TEGGINGS = new ArmorItem(TEST_MATERIAL, ArmorItem.Type.LEGGINGS, new Item.Settings());
-    public static final Item TOOTS = new ArmorItem(TEST_MATERIAL, ArmorItem.Type.BOOTS, new Item.Settings());
+    public static final Item TEST_ITEM = registerItem(id("test_item"), settings -> new TestItem(settings.maxCount(6).rarity(Rarity.EPIC)));
+    public static final Item TEST_FOOD = registerItem(id("test_food"), settings -> new Item(settings.food(FoodComponents.COOKED_CHICKEN)));
+    public static final ArmorMaterial TEST_MATERIAL = new ArmorMaterial(5, Util.make(new EnumMap<>(EquipmentType.class), (map) -> {
+        map.put(EquipmentType.BOOTS, 1);
+        map.put(EquipmentType.LEGGINGS, 2);
+        map.put(EquipmentType.CHESTPLATE, 3);
+        map.put(EquipmentType.HELMET, 1);
+        map.put(EquipmentType.BODY, 3);
+    }), 5, SoundEvents.AMBIENT_BASALT_DELTAS_ADDITIONS, 3, 4, TagKey.of(RegistryKeys.ITEM, id("empty")), RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, id("armor_material")));
+    public static final Item TELMET = registerItem(id("test_helmet"), settings -> new ArmorItem(TEST_MATERIAL, EquipmentType.HELMET, settings));
+    public static final Item TESTPLATE =  registerItem(id("test_chestplate"), settings -> new ArmorItem(TEST_MATERIAL, EquipmentType.CHESTPLATE, settings));
+    public static final Item TEGGINGS =  registerItem(id("test_leggings"), settings -> new ArmorItem(TEST_MATERIAL, EquipmentType.LEGGINGS, settings));
+    public static final Item TOOTS =  registerItem(id("test_boots"), settings -> new ArmorItem(TEST_MATERIAL, EquipmentType.BOOTS, settings));
 
-    public static final Block TEST_BLOCK = new TestBlock(FabricBlockSettings.create());
-    public static final Block TEST_STAIRS = new TestStairsBlock(TEST_BLOCK.getDefaultState(), FabricBlockSettings.create());
-    public static final Block TEST_SLAB = new TestSlabBlock(FabricBlockSettings.create());
-    public static final Block TEST_DOOR = new DoorBlock(TEST_WOOD_BLOCKSET, FabricBlockSettings.copyOf(Blocks.OAK_DOOR));
-    public static final Block TEST_IRON_DOOR = new DoorBlock(TEST_IRON_BLOCKSET, FabricBlockSettings.copyOf(Blocks.OAK_DOOR));
-    public static final Block TEST_TRAP_DOOR = new TrapdoorBlock(TEST_WOOD_BLOCKSET, FabricBlockSettings.copyOf(Blocks.OAK_TRAPDOOR));
-    public static final Block TEST_IRON_TRAP_DOOR = new TrapdoorBlock(TEST_IRON_BLOCKSET, FabricBlockSettings.copyOf(Blocks.OAK_TRAPDOOR));
-    public static final Block TEST_BLOCK_GLOWING = new Block(FabricBlockSettings.create().luminance(9));
-    public static final Block TEST_BLOCK_WIZARD = new ColoredFallingBlock(new ColorCode(0), FabricBlockSettings.create());
+    public static final Block TEST_BLOCK = registerBlock(id("test_block"), AbstractBlock.Settings.create(), TestBlock::new);
+    public static final Block TEST_STAIRS = registerBlock(id("test_stairs"), AbstractBlock.Settings.create(), settings -> new TestStairsBlock(TEST_BLOCK.getDefaultState(), settings));
+    public static final Block TEST_SLAB = registerBlock(id("test_slab"), AbstractBlock.Settings.create(), TestSlabBlock::new);
+    public static final Block TEST_DOOR = registerBlock(id("test_door"), Block.Settings.copy(Blocks.OAK_DOOR), settings -> new DoorBlock(TEST_WOOD_BLOCKSET, settings));
+    public static final Block TEST_IRON_DOOR = registerBlock(id("test_iron_door"), Block.Settings.copy(Blocks.OAK_DOOR), settings -> new DoorBlock(TEST_IRON_BLOCKSET, settings));
+    public static final Block TEST_TRAP_DOOR = registerBlock(id("test_trapdoor"), Block.Settings.copy(Blocks.OAK_TRAPDOOR), settings -> new TrapdoorBlock(TEST_WOOD_BLOCKSET, settings));
+    public static final Block TEST_IRON_TRAP_DOOR = registerBlock(id("test_iron_trapdoor"), Block.Settings.copy(Blocks.OAK_TRAPDOOR), settings -> new TrapdoorBlock(TEST_IRON_BLOCKSET, settings));
+    public static final Block TEST_BLOCK_GLOWING = registerBlock(id("test_block_glowing"), Block.Settings.create().luminance(x -> 9), Block::new);
+    public static final Block TEST_BLOCK_WIZARD = registerBlock(id("test_block_wizard"), Block.Settings.create(), settings -> new ColoredFallingBlock(new ColorCode(0), settings));
 
-    public static final EntityType<? extends LivingEntity> TEST_ENTITY_DIRECT = FabricEntityTypeBuilder.create().entityFactory(CreeperEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)).build();
-    public static final EntityType<? extends LivingEntity> TEST_ENTITY_EXTEND_DIRECT = FabricEntityTypeBuilder.create().entityFactory(TestExtendDirectEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)).build();
-    public static final EntityType<? extends LivingEntity> TEST_ENTITY_EXTEND_MOB = FabricEntityTypeBuilder.create().entityFactory(TestExtendMobEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)).build();
-    public static final EntityType<? extends LivingEntity> TEST_ENTITY_EXTEND_GOLEM = FabricEntityTypeBuilder.create().entityFactory(TestExtendGolemEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)).build();
-    public static final EntityType<? extends LivingEntity> TEST_ENTITY_LIVING = FabricEntityTypeBuilder.create().entityFactory(TestLivingEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)).build();
-    public static final EntityType<?> TEST_ENTITY_OTHER = FabricEntityTypeBuilder.create().entityFactory(TestOtherEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)).build();
-    public static final EntityType<?> TEST_FLYING_WAXED_WEATHERED_CUT_COPPER_STAIRS_ENTITY = FabricEntityTypeBuilder.create().entityFactory(TestFlyingWaxedWeatheredCutCopperStairs::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)).build();
+    public static final EntityType<? extends LivingEntity> TEST_ENTITY_DIRECT = registerEntity(id("test_entity_direct"), FabricEntityTypeBuilder.create().entityFactory(CreeperEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)));
+    public static final EntityType<? extends LivingEntity> TEST_ENTITY_EXTEND_DIRECT = registerEntity(id("test_entity_extend_direct"), FabricEntityTypeBuilder.create().entityFactory(TestExtendDirectEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)));
+    public static final EntityType<? extends LivingEntity> TEST_ENTITY_EXTEND_MOB = registerEntity(id("test_entity_extend_mob"), FabricEntityTypeBuilder.create().entityFactory(TestExtendMobEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)));
+    public static final EntityType<? extends LivingEntity> TEST_ENTITY_EXTEND_GOLEM = registerEntity(id("test_entity_extend_golem"),FabricEntityTypeBuilder.create().entityFactory(TestExtendGolemEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)));
+    public static final EntityType<? extends LivingEntity> TEST_ENTITY_LIVING = registerEntity(id("test_entity_extend_living"),FabricEntityTypeBuilder.create().entityFactory(TestLivingEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)));
+    public static final EntityType<?> TEST_ENTITY_OTHER = registerEntity(id("test_entity_other"),FabricEntityTypeBuilder.create().entityFactory(TestOtherEntity::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)));
+    public static final EntityType<?> TEST_FLYING_WAXED_WEATHERED_CUT_COPPER_STAIRS_ENTITY = registerEntity(id("test_flying_waxed_weathered_cut_copper_stairs"), FabricEntityTypeBuilder.create().entityFactory(TestFlyingWaxedWeatheredCutCopperStairs::new).trackRangeChunks(4).dimensions(EntityDimensions.fixed(0.5f, 0.5f)));
 
     public static final RegistryEntry<StatusEffect> TEST_EFFECT = Registry.registerReference(Registries.STATUS_EFFECT, id("yellow_effect"), new YellowStatusEffect(StatusEffectCategory.HARMFUL, YELLOW));
-    public static final Potion TEST_POTION_TYPE = Registry.register(Registries.POTION, id("yellow_potion"), new Potion(new StatusEffectInstance(TEST_EFFECT, 9600)));
+    public static final Potion TEST_POTION_TYPE = Registry.register(Registries.POTION, id("yellow_potion"), new Potion("yellow_potion", new StatusEffectInstance(TEST_EFFECT, 9600)));
 
     @Override
     public void onInitialize() {
-        Registry.register(Registries.ITEM, id("test_item"), TEST_ITEM);
-        Registry.register(Registries.ITEM, id("test_food"), TEST_FOOD);
-
-        Registry.register(Registries.ITEM, id("test_helmet"), TELMET);
-        Registry.register(Registries.ITEM, id("test_chestplate"), TESTPLATE);
-        Registry.register(Registries.ITEM, id("test_leggings"), TEGGINGS);
-        Registry.register(Registries.ITEM, id("test_boots"), TOOTS);
-
-        registerBlock(id("test_block"), TEST_BLOCK);
-        registerBlock(id("test_stairs"), TEST_STAIRS);
-        registerBlock(id("test_slab"), TEST_SLAB);
-        registerBlock(id("test_door"), TEST_DOOR);
-        registerBlock(id("test_iron_door"), TEST_IRON_DOOR);
-        registerBlock(id("test_trapdoor"), TEST_TRAP_DOOR);
-        registerBlock(id("test_iron_trapdoor"), TEST_IRON_TRAP_DOOR);
-        registerBlock(id("test_block_glowing"), TEST_BLOCK_GLOWING);
-        registerBlock(id("test_block_wizard"), TEST_BLOCK_WIZARD);
-
-        Registry.register(Registries.ENTITY_TYPE, id("test_entity_direct"), TEST_ENTITY_DIRECT);
         FabricDefaultAttributeRegistry.register(TEST_ENTITY_DIRECT, CreeperEntity.createCreeperAttributes());
-        Registry.register(Registries.ENTITY_TYPE, id("test_entity_extend_direct"), TEST_ENTITY_EXTEND_DIRECT);
         FabricDefaultAttributeRegistry.register(TEST_ENTITY_EXTEND_DIRECT, CreeperEntity.createCreeperAttributes());
 
-        Registry.register(Registries.ENTITY_TYPE, id("test_entity_extend_mob"), TEST_ENTITY_EXTEND_MOB);
         FabricDefaultAttributeRegistry.register(TEST_ENTITY_EXTEND_MOB, MobEntity.createMobAttributes());
 
-        Registry.register(Registries.ENTITY_TYPE, id("test_entity_extend_golem"), TEST_ENTITY_EXTEND_GOLEM);
         FabricDefaultAttributeRegistry.register(TEST_ENTITY_EXTEND_GOLEM, MobEntity.createMobAttributes());
 
-        Registry.register(Registries.ENTITY_TYPE, id("test_entity_living"), TEST_ENTITY_LIVING);
         FabricDefaultAttributeRegistry.register(TEST_ENTITY_LIVING, LivingEntity.createLivingAttributes());
-        Registry.register(Registries.ENTITY_TYPE, id("test_entity_other"), TEST_ENTITY_OTHER);
-        Registry.register(Registries.ENTITY_TYPE, id("test_flying_waxed_weathered_cut_copper_stairs_entity"), TEST_FLYING_WAXED_WEATHERED_CUT_COPPER_STAIRS_ENTITY);
 
         CommandRegistrationCallback.EVENT.register(TestCommands::register);
 
@@ -135,9 +116,22 @@ public class Testmod implements ModInitializer {
         if (playerEntity != null) playerEntity.sendMessage(Text.literal(text), false);
     }
 
-    private static void registerBlock(Identifier id, Block block) {
-        Registry.register(Registries.BLOCK, id, block);
-        Registry.register(Registries.ITEM, id, new BlockItem(block, new Item.Settings()));
+    private static <T extends Entity> EntityType<T> registerEntity(Identifier id, FabricEntityTypeBuilder<T> builder) {
+        return Registry.register(Registries.ENTITY_TYPE, id, builder.build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, id)));
+    }
+
+
+    private static <T extends Item> T registerItem(Identifier id, Function<Item.Settings, T> block) {
+        var entry = block.apply(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, id)));
+        Registry.register(Registries.ITEM, id, entry);
+        return entry;
+    }
+
+    private static <T extends Block> T registerBlock(Identifier id, AbstractBlock.Settings settings, Function<AbstractBlock.Settings, T> block) {
+        var entry = block.apply(settings.registryKey(RegistryKey.of(RegistryKeys.BLOCK, id)));
+        Registry.register(Registries.BLOCK, id, entry);
+        Registry.register(Registries.ITEM, id, new BlockItem(entry, new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, id))));
+        return entry;
     }
 
     private static Identifier id(String path) {

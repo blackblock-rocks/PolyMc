@@ -26,6 +26,7 @@ import com.google.gson.JsonSyntaxException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import io.github.theepicblock.polymc.PolyMc;
 import io.github.theepicblock.polymc.api.DebugInfoProvider;
 import io.github.theepicblock.polymc.api.PolyMap;
@@ -38,9 +39,11 @@ import io.github.theepicblock.polymc.api.item.ItemLocation;
 import io.github.theepicblock.polymc.api.item.ItemPoly;
 import io.github.theepicblock.polymc.api.item.ItemTransformer;
 import io.github.theepicblock.polymc.api.resource.PolyMcResourcePack;
+import io.github.theepicblock.polymc.api.resource.SimpleAsset;
 import io.github.theepicblock.polymc.impl.misc.logging.SimpleLogger;
 import io.github.theepicblock.polymc.impl.resource.ModdedResourceContainerImpl;
 import io.github.theepicblock.polymc.impl.resource.ResourcePackImplementation;
+import io.github.theepicblock.polymc.impl.resource.json.JModelImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.advancement.AdvancementDisplay;
 import net.minecraft.block.*;
@@ -64,12 +67,13 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 import net.minecraft.util.math.Direction;
 import org.jetbrains.annotations.Nullable;
+import xyz.nucleoid.packettweaker.PacketContext;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static net.minecraft.item.ItemStack.ITEM_CODEC;
 
 /**
  * This is the standard implementation of the PolyMap that PolyMc uses by default.
@@ -88,7 +92,7 @@ public class PolyMapImpl implements PolyMap {
      * Encodes all data that's meant to be server controlled. In practice this is simply all the ItemStack data minus
      * the count
      */
-    private static final Codec<ItemStack> ITEM_DATA_CODEC = RecordCodecBuilder.create((instance) -> instance.group(ITEM_CODEC.fieldOf("id").forGetter(ItemStack::getRegistryEntry), ComponentChanges.CODEC.optionalFieldOf("components", ComponentChanges.EMPTY).forGetter(ItemStack::getComponentChanges)).apply(instance, (id, components) -> new ItemStack(id, 1, components)));
+    private static final Codec<ItemStack> ITEM_DATA_CODEC = ItemStack.UNCOUNTED_CODEC;
     public static final MapCodec<Optional<ItemStack>> ORIGINAL_ITEM_CODEC = ITEM_DATA_CODEC.optionalFieldOf(ORIGINAL_ITEM_NBT);
 
     private final ImmutableMap<Item,ItemPoly> itemPolys;
@@ -153,8 +157,10 @@ public class PolyMapImpl implements PolyMap {
 
             // Preserves the nbt of the original item, so it can be reverted
             var finalRet = ret;
-            NbtComponent.DEFAULT.with(registryOps, ORIGINAL_ITEM_CODEC, Optional.of(serverItem)).result().ifPresent((nbt) -> {
-                finalRet.set(DataComponentTypes.CUSTOM_DATA, nbt);
+            PolymerCommonUtils.executeWithoutNetworkingLogic(() -> {
+                NbtComponent.DEFAULT.with(registryOps, ORIGINAL_ITEM_CODEC, Optional.of(serverItem)).result().ifPresent((nbt) -> {
+                    finalRet.set(DataComponentTypes.CUSTOM_DATA, nbt);
+                });
             });
         }
 
@@ -245,6 +251,28 @@ public class PolyMapImpl implements PolyMap {
         List<PolyMcEntrypoint> entrypoints = FabricLoader.getInstance().getEntrypoints("polymc", PolyMcEntrypoint.class);
         for (PolyMcEntrypoint entrypointEntry : entrypoints) {
             entrypointEntry.registerModSpecificResources(moddedResources, pack, logger);
+        }
+
+        for (var prefix : new String[]{"items/", "equipment/", "textures/"}) {
+            for (var itemFile : moddedResources.locateFiles(prefix)) {
+                pack.setAsset(itemFile.getLeft().getNamespace(), itemFile.getLeft().getPath(), new SimpleAsset(itemFile.getRight()));
+            }
+        }
+
+        for (var itemFile : moddedResources.locateFiles("models/")) {
+            try {
+                pack.setAsset(itemFile.getLeft().getNamespace(), itemFile.getLeft().getPath(), JModelImpl.of(itemFile.getRight().get(), itemFile.getLeft().toString()));
+            } catch (IOException e) {
+                logger.error(e);
+            }
+        }
+
+        for (var itemFile : moddedResources.locateFiles("equipment/")) {
+            try {
+                pack.setAsset(itemFile.getLeft().getNamespace(), itemFile.getLeft().getPath(), JModelImpl.of(itemFile.getRight().get(), itemFile.getLeft().toString()));
+            } catch (IOException e) {
+                logger.error(e);
+            }
         }
 
         // Hooks for all itempolys

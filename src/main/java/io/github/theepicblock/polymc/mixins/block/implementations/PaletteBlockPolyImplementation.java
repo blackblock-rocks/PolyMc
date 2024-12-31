@@ -20,7 +20,7 @@ package io.github.theepicblock.polymc.mixins.block.implementations;
 import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import io.github.theepicblock.polymc.api.PolyMap;
 import io.github.theepicblock.polymc.impl.Util;
-import me.jellysquid.mods.lithium.common.world.chunk.LithiumHashPalette;
+import net.caffeinemc.mods.lithium.common.world.chunk.LithiumHashPalette;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.collection.IndexedIterable;
 import net.minecraft.world.chunk.ArrayPalette;
@@ -29,6 +29,7 @@ import net.minecraft.world.chunk.SingularPalette;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import xyz.nucleoid.packettweaker.PacketContext;
 
 /**
  * Minecraft uses a different method to get ids when it sends chunks.
@@ -40,7 +41,7 @@ public abstract class PaletteBlockPolyImplementation {
     @Redirect(method = {"writePacket", "getPacketSize"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/util/collection/IndexedIterable;getRawId(Ljava/lang/Object;)I"))
     public <T> int getIdRedirect(IndexedIterable<T> instance, T object) {
         if (object instanceof BlockState) {
-            var player = PolymerCommonUtils.getPlayerContext();
+            var player = PacketContext.get().getPlayer();
 
             PolyMap map = Util.tryGetPolyMap(player);
             return map.getClientStateRawId((BlockState)object, player);

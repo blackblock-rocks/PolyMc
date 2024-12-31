@@ -36,7 +36,7 @@ import java.util.List;
  */
 @Mixin(SynchronizeRecipesS2CPacket.class)
 public class CustomRecipeFix {
-    @ModifyReturnValue(method = "method_55955", at = @At("TAIL"))
+    /*@ModifyReturnValue(method = "method_55955", at = @At("TAIL"))
     private static List<RecipeEntry<?>> modifyRecipes(List<RecipeEntry<?>> input) {
         if (!Util.isPolyMapVanillaLike(PacketContext.get().getClientConnection())) {
             return input;
@@ -49,5 +49,5 @@ public class CustomRecipeFix {
         }
 
         return list;
-    }
+    }*/
 }

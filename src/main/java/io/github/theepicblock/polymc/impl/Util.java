@@ -371,13 +371,16 @@ public class Util {
         return DynamicRegistryManager.EMPTY;
     }
 
-    private static final ComponentType<?>[] COMPONENTS_TO_COPY = {DataComponentTypes.CAN_BREAK, DataComponentTypes.CAN_PLACE_ON,
-            DataComponentTypes.BLOCK_ENTITY_DATA, DataComponentTypes.TRIM,
+    private static final ComponentType<?>[] COMPONENTS_TO_COPY = {
+            DataComponentTypes.CAN_BREAK,
+            DataComponentTypes.CAN_PLACE_ON,
+            DataComponentTypes.BLOCK_ENTITY_DATA,
+            DataComponentTypes.TRIM,
             DataComponentTypes.TOOL,
-            DataComponentTypes.ITEM_NAME,
             DataComponentTypes.MAX_STACK_SIZE,
             DataComponentTypes.FOOD,
-            DataComponentTypes.FIRE_RESISTANT,
+            DataComponentTypes.DAMAGE_RESISTANT,
+            DataComponentTypes.CUSTOM_MODEL_DATA,
             DataComponentTypes.FIREWORKS,
             DataComponentTypes.FIREWORK_EXPLOSION,
             DataComponentTypes.DAMAGE,
@@ -386,22 +389,30 @@ public class Util {
             DataComponentTypes.BANNER_PATTERNS,
             DataComponentTypes.BASE_COLOR,
             DataComponentTypes.HIDE_TOOLTIP,
-            DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP,
             DataComponentTypes.CAN_BREAK,
             DataComponentTypes.CAN_PLACE_ON,
             DataComponentTypes.REPAIR_COST,
             DataComponentTypes.BUNDLE_CONTENTS,
+            DataComponentTypes.TOOLTIP_STYLE,
             DataComponentTypes.RARITY,
             DataComponentTypes.LODESTONE_TRACKER,
             DataComponentTypes.ENCHANTMENTS,
             DataComponentTypes.STORED_ENCHANTMENTS,
             DataComponentTypes.POTION_CONTENTS,
             DataComponentTypes.CUSTOM_NAME,
+            DataComponentTypes.JUKEBOX_PLAYABLE,
+            DataComponentTypes.ITEM_MODEL,
             DataComponentTypes.WRITABLE_BOOK_CONTENT,
             DataComponentTypes.WRITTEN_BOOK_CONTENT,
-            DataComponentTypes.DYED_COLOR,
-            DataComponentTypes.JUKEBOX_PLAYABLE,
             DataComponentTypes.CONTAINER,
+            DataComponentTypes.ENCHANTABLE,
+            DataComponentTypes.USE_COOLDOWN,
+            DataComponentTypes.CONSUMABLE,
+            DataComponentTypes.EQUIPPABLE,
+            DataComponentTypes.GLIDER,
+            DataComponentTypes.CUSTOM_MODEL_DATA,
+            DataComponentTypes.DYED_COLOR,
+            DataComponentTypes.REPAIRABLE
     };
 
     public static NbtCompound transformBlockEntityNbt(PacketContext context, BlockEntityType<?> type, NbtCompound original) {
@@ -431,7 +442,7 @@ public class Util {
                     nbt.remove("id");
                     nbt.remove("components");
                     nbt.remove("count");
-                    override.getList("Items", NbtElement.COMPOUND_TYPE).set(i, x.isEmpty() ? new NbtCompound() : x.encode(lookup, nbt));
+                    override.getList("Items", NbtElement.COMPOUND_TYPE).set(i, x.isEmpty() ? new NbtCompound() : x.toNbt(lookup, nbt));
                 }
             }
         }
@@ -443,7 +454,7 @@ public class Util {
                 if (override == null) {
                     override = original.copy();
                 }
-                override.put("item", x.encodeAllowEmpty(lookup));
+                override.put("item", x.toNbtAllowEmpty(lookup));
             }
         }
 

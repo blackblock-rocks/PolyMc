@@ -49,6 +49,11 @@ public class MergedModdedResources implements ModdedResources {
     }
 
     @Override
+    public @NotNull Set<Pair<Identifier, InputSupplier<InputStream>>> locateFiles(String prefix) {
+        return this.base.locateFiles(prefix);
+    }
+
+    @Override
     public ClientJarResources getClientJar(SimpleLogger logger) {
         return this.client;
     }

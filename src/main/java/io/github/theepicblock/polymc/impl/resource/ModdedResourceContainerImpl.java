@@ -37,7 +37,12 @@ public class ModdedResourceContainerImpl implements ModdedResources {
 
     @Override
     public @NotNull Set<Pair<Identifier,InputSupplier<InputStream>>> locateLanguageFiles() {
-        return inner.locateLanguageFiles();
+        return inner.locateFiles("lang");
+    }
+
+    @Override
+    public @NotNull Set<Pair<Identifier,InputSupplier<InputStream>>> locateFiles(String prefix) {
+        return inner.locateFiles(prefix);
     }
 
     @Override

@@ -32,9 +32,6 @@ public interface WorldAccessor {
     @Accessor("properties")
     void polymc$setProperties(MutableWorldProperties properties);
 
-    @Mutable
-    @Accessor("profiler")
-    void polymc$setProfiler(Supplier<Profiler> profiler);
 
     @Mutable
     @Accessor("border")

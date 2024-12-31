@@ -45,6 +45,7 @@ import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.consume.ConsumeEffect;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.potion.Potion;
 import net.minecraft.registry.Registries;
@@ -189,4 +190,8 @@ public interface PolyMap {
     default boolean canReceiveEnchantmentEntityEffect(EnchantmentEntityEffect effect) {
         return Util.isVanilla(Registries.ENCHANTMENT_ENTITY_EFFECT_TYPE.getId(effect.getCodec()));
     }
+
+    default boolean canReceiveConsumeEffect(ConsumeEffect.Type<? extends ConsumeEffect> type) {
+        return Util.isVanilla(Registries.CONSUME_EFFECT_TYPE.getId(type));
+    };
 }

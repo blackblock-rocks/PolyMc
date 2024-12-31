@@ -33,15 +33,15 @@ public class TestItem extends Item {
     }
 
     @Override
-    public void onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks) {
+    public boolean onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks) {
         if (user instanceof PlayerEntity playerEntity) {
             Testmod.debugSend(playerEntity, "[TestItem] onStoppedUsing");
         }
-        super.onStoppedUsing(stack, world, user, remainingUseTicks);
+        return super.onStoppedUsing(stack, world, user, remainingUseTicks);
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+    public ActionResult use(World world, PlayerEntity user, Hand hand) {
         Testmod.debugSend(user, "[TestItem] use");
         return super.use(world, user, hand);
     }

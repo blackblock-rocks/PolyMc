@@ -5,7 +5,6 @@ import io.github.theepicblock.polymc.api.item.ItemLocation;
 import io.github.theepicblock.polymc.api.item.ItemTransformer;
 import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.mixin.TransformingComponent;
-import io.github.theepicblock.polymc.mixins.item.ArmorTrimAccessor;
 import io.github.theepicblock.polymc.mixins.item.ItemEnchantmentsComponentAccessor;
 import io.github.theepicblock.polymc.mixins.item.ItemStackAccessor;
 import it.unimi.dsi.fastutil.objects.AbstractReferenceList;
@@ -17,8 +16,8 @@ import net.minecraft.item.BlockPredicatesChecker;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.PotionItem;
+import net.minecraft.item.equipment.trim.ArmorTrim;
 import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.item.trim.ArmorTrim;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -98,8 +97,7 @@ public class Tooltip2LoreTransformer implements ItemTransformer {
             return false;
         }
 
-        if (TransformingComponent.requireTransformForTooltip(original.get(DataComponentTypes.ATTRIBUTE_MODIFIERS), pctx)
-        || (stack.getItem() != original.getItem() && !original.getItem().getAttributeModifiers().modifiers().isEmpty())) {
+        if (TransformingComponent.requireTransformForTooltip(original.get(DataComponentTypes.ATTRIBUTE_MODIFIERS), pctx)) {
             return true;
         }
 
@@ -178,8 +176,8 @@ public class Tooltip2LoreTransformer implements ItemTransformer {
         }
 
         var trim = input.get(DataComponentTypes.TRIM);
-        if (trim != null && ((ArmorTrimAccessor)trim).isShowInTooltip()) {
-            input.set(DataComponentTypes.TRIM, new ArmorTrim(trim.getMaterial(), trim.getPattern(), false));
+        if (trim != null && trim.showInTooltip()) {
+            input.set(DataComponentTypes.TRIM, new ArmorTrim(trim.material(), trim.pattern(), false));
         }
 
         var stored_enchants = (ItemEnchantmentsComponentAccessor)input.get(DataComponentTypes.STORED_ENCHANTMENTS);

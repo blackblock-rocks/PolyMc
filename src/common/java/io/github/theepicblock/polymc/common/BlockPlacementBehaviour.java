@@ -69,7 +69,7 @@ public enum BlockPlacementBehaviour {
 
     private static boolean normalBlockItem(BlockItem item) {
         var itemClass = item.getClass();
-        return itemClass == BlockItem.class || itemClass == AliasedBlockItem.class || itemClass == VerticallyAttachableBlockItem.class;
+        return itemClass == BlockItem.class || itemClass == VerticallyAttachableBlockItem.class;
     }
 
     private static boolean hasNormalCanReplace(BlockItem item) {

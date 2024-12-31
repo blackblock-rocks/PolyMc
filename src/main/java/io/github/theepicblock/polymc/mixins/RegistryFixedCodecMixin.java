@@ -39,7 +39,7 @@ public class RegistryFixedCodecMixin {
                 } else if (entry.value() instanceof EntityType<?> && !map.canReceiveRegistryEntry(Registries.ENTITY_TYPE, (RegistryEntry<EntityType<?>>) entry)) {
                     return EntityType.MARKER.getRegistryEntry();
                 } else if (entry.value() instanceof EntityAttribute && !map.canReceiveRegistryEntry(Registries.ATTRIBUTE, (RegistryEntry<EntityAttribute>) entry)) {
-                    return EntityAttributes.ZOMBIE_SPAWN_REINFORCEMENTS;
+                    return EntityAttributes.SPAWN_REINFORCEMENTS;
                 }
             } catch (Throwable e) {
                 e.printStackTrace();

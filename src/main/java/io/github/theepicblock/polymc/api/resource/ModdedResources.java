@@ -23,7 +23,8 @@ public interface ModdedResources extends AutoCloseable, ResourceContainer {
      */
     @NotNull Set<String> getAllNamespaces();
 
-    @NotNull Set<Pair<Identifier,InputSupplier<InputStream>>> locateLanguageFiles();
+    @NotNull Set<Pair<Identifier, InputSupplier<InputStream>>> locateFiles(String prefix);
+    @NotNull Set<Pair<Identifier, InputSupplier<InputStream>>> locateLanguageFiles();
 
     ClientJarResources getClientJar(SimpleLogger logger);
 

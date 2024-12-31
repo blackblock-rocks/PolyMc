@@ -2,8 +2,13 @@ package io.github.theepicblock.polymc.mixins.component.transforms;
 
 import io.github.theepicblock.polymc.impl.Util;
 import io.github.theepicblock.polymc.impl.mixin.TransformingComponent;
+import net.minecraft.component.type.ConsumableComponent;
 import net.minecraft.component.type.FoodComponent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.consume.ConsumeEffect;
+import net.minecraft.item.consume.UseAction;
+import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.sound.SoundEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -12,19 +17,17 @@ import xyz.nucleoid.packettweaker.PacketContext;
 import java.util.List;
 import java.util.Optional;
 
-@Mixin(FoodComponent.class)
-public abstract class FoodComponentMixin implements TransformingComponent {
-    @Shadow @Final private int nutrition;
+@Mixin(ConsumableComponent.class)
+public abstract class ConsumableComponentMixin implements TransformingComponent {
+    @Shadow @Final private float consumeSeconds;
 
-    @Shadow @Final private boolean canAlwaysEat;
+    @Shadow @Final private RegistryEntry<SoundEvent> sound;
 
-    @Shadow @Final private float eatSeconds;
+    @Shadow @Final private boolean hasConsumeParticles;
 
-    @Shadow @Final private List<FoodComponent.StatusEffectEntry> effects;
+    @Shadow @Final private List<ConsumeEffect> onConsumeEffects;
 
-    @Shadow @Final private float saturation;
-
-    @Shadow @Final private Optional<ItemStack> usingConvertsTo;
+    @Shadow @Final private UseAction useAction;
 
     @Override
     public Object polymc$getTransformed(PacketContext player) {
@@ -32,14 +35,14 @@ public abstract class FoodComponentMixin implements TransformingComponent {
             return this;
         }
 
-        return new FoodComponent(this.nutrition, this.saturation, this.canAlwaysEat, this.eatSeconds, this.usingConvertsTo, List.of());
+        return new ConsumableComponent(this.consumeSeconds, this.useAction, this.sound, this.hasConsumeParticles, List.of());
     }
 
     @Override
     public boolean polymc$requireModification(PacketContext player) {
         var map = Util.tryGetPolyMap(player);
-        for (var effect : this.effects) {
-            if (!map.canReceiveStatusEffect(effect.effect().getEffectType())) {
+        for (var effect : this.onConsumeEffects) {
+            if (!map.canReceiveConsumeEffect(effect.getType())) {
                 return true;
             }
         }

@@ -1,6 +1,7 @@
 package io.github.theepicblock.polymc.impl.misc;
 
 import com.mojang.authlib.GameProfile;
+import eu.pb4.polymer.common.impl.FakeWorld;
 import io.github.theepicblock.polymc.PolyMc;
 import io.github.theepicblock.polymc.impl.ConfigManager;
 import io.github.theepicblock.polymc.mixins.entity.DataTrackerAccessor;
@@ -113,10 +114,10 @@ public class InternalEntityHelpers {
             }
 
             try {
-                entity = type.create(FakeWorld.INSTANCE_UNSAFE);
+                entity = type.create(FakeWorld.INSTANCE_UNSAFE, SpawnReason.LOAD);
             } catch (Throwable e) {
                 try {
-                    entity = type.create(FakeWorld.INSTANCE_REGULAR);
+                    entity = type.create(FakeWorld.INSTANCE_REGULAR, SpawnReason.LOAD);
                 } catch (Throwable e2) {
                     var id = Registries.ENTITY_TYPE.getId(type);
                     if (ConfigManager.getConfig().logEntityTemplateErrors) {

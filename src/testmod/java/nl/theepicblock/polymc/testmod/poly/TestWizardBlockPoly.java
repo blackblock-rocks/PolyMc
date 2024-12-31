@@ -46,6 +46,7 @@ public class TestWizardBlockPoly implements BlockPoly {
         public void onTick(PacketConsumer players) {
             players.sendPacket(new ParticleS2CPacket(ParticleTypes.WAX_ON,
                     false,
+                    false,
                     this.getPosition().x,
                     this.getPosition().y+0.5,
                     this.getPosition().z,

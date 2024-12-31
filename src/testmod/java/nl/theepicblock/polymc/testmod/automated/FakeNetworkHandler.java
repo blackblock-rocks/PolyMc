@@ -52,8 +52,7 @@ public class FakeNetworkHandler extends ServerPlayNetworkHandler {
 
         var bytebuf = PacketByteBufs.create();
         // TODO not use internal stuff here
-        PacketContext.setContext(this.connection, packet);
-        PacketContext.runWithContext(this, packet, () -> {
+        PacketContext.runWithContext(connection, this, packet, () -> {
             state.codec().encode(bytebuf, (Packet<? super PacketListener>)packet);
         });
         var reconstructedPacket = state.codec().decode(bytebuf);

@@ -127,7 +127,7 @@ public abstract class BlockBreakingPatch implements BlockBreakingDuck {
     private void disableClientBreaking() {
         isBreakingServerside = true;
         // Make sure it's resynced
-        this.player.getAttributes().getTracked().add(this.player.getAttributeInstance(EntityAttributes.PLAYER_BLOCK_BREAK_SPEED));
+        this.player.getAttributes().getTracked().add(this.player.getAttributeInstance(EntityAttributes.BLOCK_BREAK_SPEED));
     }
 
     @Unique

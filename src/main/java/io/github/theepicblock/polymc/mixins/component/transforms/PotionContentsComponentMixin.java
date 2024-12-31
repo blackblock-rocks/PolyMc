@@ -22,13 +22,15 @@ public abstract class PotionContentsComponentMixin implements TransformingCompon
 
     @Shadow public abstract int getColor();
 
+    @Shadow @Final private Optional<String> customName;
+
     @Override
     public Object polymc$getTransformed(PacketContext player) {
         if (!polymc$requireModification(player)) {
             return this;
         }
 
-        return new PotionContentsComponent(Optional.empty(), Optional.of(this.getColor()), List.of());
+        return new PotionContentsComponent(Optional.empty(), Optional.of(this.getColor()), List.of(), this.customName);
     }
 
     @Override

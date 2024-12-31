@@ -131,11 +131,6 @@ public class ThreadedWizardUpdater extends ReentrantThreadExecutor<Runnable> {
     }
 
     @Override
-    protected Runnable createTask(Runnable runnable) {
-        return runnable;
-    }
-
-    @Override
     protected boolean canExecute(Runnable task) {
         return true;
     }
@@ -143,6 +138,11 @@ public class ThreadedWizardUpdater extends ReentrantThreadExecutor<Runnable> {
     @Override
     protected Thread getThread() {
         return myThread;
+    }
+
+    @Override
+    public Runnable createTask(Runnable runnable) {
+        return runnable;
     }
 
     public record UpdateInfoImpl(int tick, float tickDelta) implements UpdateInfo {
