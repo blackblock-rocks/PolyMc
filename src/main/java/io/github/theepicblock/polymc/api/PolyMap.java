@@ -17,6 +17,7 @@
  */
 package io.github.theepicblock.polymc.api;
 
+import eu.pb4.polymer.rsm.api.RegistrySyncUtils;
 import io.github.theepicblock.polymc.api.block.BlockPoly;
 import io.github.theepicblock.polymc.api.entity.EntityPoly;
 import io.github.theepicblock.polymc.api.gui.GuiPoly;
@@ -145,7 +146,7 @@ public interface PolyMap {
      * @see EntityAttributesFilteringMixin
      */
     default <T> boolean canReceiveRegistryEntry(Registry<T> registry, RegistryEntry<T> entry) {
-        return Util.isVanillaAndRegistered(entry);
+        return Util.isVanillaAndRegistered(entry) || RegistrySyncUtils.isServerEntry(registry, entry.value());
     }
 
     default boolean canReceiveBlockEntity(BlockEntityType<?> e) {

@@ -15,6 +15,7 @@
     "ReferenceAccessor",
     "RegistryElementCodecMixin",
     "RegistryFixedCodecMixin",
+    "RegistryMixin",
     "SCNetworkHandlerAccessor",
     "ServerStartMixin",
     "SoundPacketFix",
