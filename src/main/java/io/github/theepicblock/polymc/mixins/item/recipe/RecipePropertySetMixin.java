@@ -20,6 +20,6 @@ public class RecipePropertySetMixin {
         var map = Util.tryGetPolyMap(PacketContext.get());
         var x = new ArrayList<>(original);
         x.removeIf(a -> !map.canReceiveRegistryEntry(Registries.ITEM, a));
-        return original;
+        return x;
     }
 }
